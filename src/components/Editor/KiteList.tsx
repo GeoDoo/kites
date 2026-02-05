@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useEffect, useCallback } from "react";
 import { useKitesStore, useKites, useCurrentKiteIndex, useCurrentTheme } from "@/lib/store";
 import { getTheme, getBackgroundForKite } from "@/lib/themes";
 import { cn } from "@/lib/utils";
@@ -8,6 +9,7 @@ import { Plus, Trash2, Copy } from "lucide-react";
 /**
  * KiteList Component
  * Sidebar showing all kites as thumbnails
+ * Supports arrow key navigation (Up/Down)
  */
 export function KiteList() {
   const kites = useKites();
@@ -15,6 +17,40 @@ export function KiteList() {
   const { setCurrentKite, addKite, deleteKite, duplicateKite } = useKitesStore();
   const currentThemeId = useCurrentTheme();
   const theme = getTheme(currentThemeId);
+  const listRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  // Scroll selected kite into view
+  useEffect(() => {
+    const el = itemRefs.current.get(currentKiteIndex);
+    if (el) {
+      el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, [currentKiteIndex]);
+
+  // Keyboard navigation
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "ArrowDown" || e.key === "j") {
+        e.preventDefault();
+        if (currentKiteIndex < kites.length - 1) {
+          setCurrentKite(currentKiteIndex + 1);
+        }
+      } else if (e.key === "ArrowUp" || e.key === "k") {
+        e.preventDefault();
+        if (currentKiteIndex > 0) {
+          setCurrentKite(currentKiteIndex - 1);
+        }
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        setCurrentKite(0);
+      } else if (e.key === "End") {
+        e.preventDefault();
+        setCurrentKite(kites.length - 1);
+      }
+    },
+    [currentKiteIndex, kites.length, setCurrentKite]
+  );
 
   const handleAddKite = () => {
     addKite();
@@ -31,7 +67,12 @@ export function KiteList() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-white/50 backdrop-blur-sm border-r border-sky-100">
+    <div
+      ref={listRef}
+      className="h-full flex flex-col bg-white/50 backdrop-blur-sm border-r border-sky-100 outline-none"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+    >
       {/* Header */}
       <div className="p-3 border-b border-sky-100 flex items-center justify-between">
         <h2 className="font-semibold text-slate-700 text-sm">Kites</h2>
@@ -54,6 +95,10 @@ export function KiteList() {
         {kites.map((kite, index) => (
           <div
             key={kite.id}
+            ref={(el) => {
+              if (el) itemRefs.current.set(index, el);
+              else itemRefs.current.delete(index);
+            }}
             onClick={() => setCurrentKite(index)}
             className={cn(
               "group relative cursor-pointer rounded-xl overflow-hidden",
