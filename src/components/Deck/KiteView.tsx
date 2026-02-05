@@ -5,6 +5,7 @@ import { type Kite, type ContentBlock } from "@/lib/types";
 import { type KiteTheme, getBackgroundForKite } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 import { ZombieAttack, type AttackType } from "./ZombieAttack";
+import { PresentationTimer } from "./PresentationTimer";
 
 interface KiteViewProps {
   kite: Kite;
@@ -24,9 +25,14 @@ export function KiteView({ kite, index, isActive = false, theme, totalKites }: K
   const [attackType, setAttackType] = useState<AttackType>("scratch");
   
   // Calculate timer per kite: total talk time / number of kites
-  const timerSeconds = theme.effects?.zombieAttack?.totalTalkMinutes
-    ? Math.floor((theme.effects.zombieAttack.totalTalkMinutes * 60) / totalKites)
+  const timerSeconds = theme.timer?.totalTalkMinutes
+    ? Math.floor((theme.timer.totalTalkMinutes * 60) / totalKites)
     : 60; // Default 60 seconds if not configured
+  
+  // Check if this theme has zombie attack enabled
+  const hasZombieAttack = theme.effects?.zombieAttack?.enabled;
+  // Check if timer is enabled for this theme
+  const hasTimer = theme.timer?.enabled;
   
   // Reset attack state when slide becomes active (e.g., navigating back to it)
   useEffect(() => {
@@ -121,10 +127,19 @@ export function KiteView({ kite, index, isActive = false, theme, totalKites }: K
         />
       )}
 
-      {/* Zombie Attack Effect - only for zombie theme */}
-      {theme.effects?.zombieAttack?.enabled && (
+      {/* Presentation Timer - for all themes except zombie (which has its own timer in ZombieAttack) */}
+      {hasTimer && !hasZombieAttack && (
+        <PresentationTimer
+          timerSeconds={timerSeconds}
+          isActive={isActive}
+          theme={theme}
+        />
+      )}
+
+      {/* Zombie Attack Effect - only for zombie theme (includes its own timer) */}
+      {hasZombieAttack && (
         <ZombieAttack
-          config={theme.effects.zombieAttack}
+          config={theme.effects!.zombieAttack!}
           timerSeconds={timerSeconds}
           isActive={isActive}
           onAttack={handleZombieAttack}

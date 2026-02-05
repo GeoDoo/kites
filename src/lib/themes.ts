@@ -3,9 +3,13 @@
  * Game-inspired presets that apply globally to all kites
  */
 
-export interface ZombieAttackConfig {
+export interface TimerConfig {
   enabled: boolean;
   totalTalkMinutes: number;  // Total presentation time - divided by kite count for per-kite timer
+}
+
+export interface ZombieAttackConfig {
+  enabled: boolean;
 }
 
 export interface BackgroundTreatment {
@@ -36,11 +40,12 @@ export interface KiteTheme {
   backgroundTreatment?: BackgroundTreatment;
   font?: string;
   style: "sharp" | "rounded" | "pixel";
+  timer?: TimerConfig;  // Presentation timer - separate from theme-specific effects
   effects?: {
     glow?: boolean;
     scanlines?: boolean;
     noise?: boolean;
-    zombieAttack?: ZombieAttackConfig;
+    zombieAttack?: ZombieAttackConfig;  // Zombie-specific attack animation
   };
 }
 
@@ -66,6 +71,10 @@ export const themes: Record<string, KiteTheme> = {
       brightness: 1.1,
     },
     style: "rounded",
+    timer: {
+      enabled: true,
+      totalTalkMinutes: 25,
+    },
   },
 
   retro: {
@@ -91,6 +100,10 @@ export const themes: Record<string, KiteTheme> = {
     },
     font: "VT323",
     style: "sharp",
+    timer: {
+      enabled: true,
+      totalTalkMinutes: 25,
+    },
     effects: {
       scanlines: true,
     },
@@ -118,6 +131,10 @@ export const themes: Record<string, KiteTheme> = {
       overlay: "rgba(10, 0, 30, 0.6)",
     },
     style: "sharp",
+    timer: {
+      enabled: true,
+      totalTalkMinutes: 25,
+    },
     effects: {
       glow: true,
     },
@@ -146,6 +163,10 @@ export const themes: Record<string, KiteTheme> = {
     },
     font: "Cinzel",
     style: "rounded",
+    timer: {
+      enabled: true,
+      totalTalkMinutes: 25,
+    },
     effects: {
       noise: true,
     },
@@ -181,11 +202,14 @@ export const themes: Record<string, KiteTheme> = {
     },
     font: "Creepster",
     style: "sharp",
+    timer: {
+      enabled: true,
+      totalTalkMinutes: 25,
+    },
     effects: {
       noise: true,
       zombieAttack: {
-        enabled: true,
-        totalTalkMinutes: 25,
+        enabled: true,  // Enables zombie animation synced to timer
       },
     },
   },

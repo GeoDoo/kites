@@ -85,7 +85,12 @@ describe("Specific Themes", () => {
     it("should have zombie attack config enabled", () => {
       expect(themes.zombie.effects?.zombieAttack).toBeDefined();
       expect(themes.zombie.effects?.zombieAttack?.enabled).toBe(true);
-      expect(themes.zombie.effects?.zombieAttack?.totalTalkMinutes).toBeGreaterThan(0);
+    });
+
+    it("should have timer config with totalTalkMinutes", () => {
+      expect(themes.zombie.timer).toBeDefined();
+      expect(themes.zombie.timer?.enabled).toBe(true);
+      expect(themes.zombie.timer?.totalTalkMinutes).toBeGreaterThan(0);
     });
 
     it("should have Creepster font", () => {
@@ -116,6 +121,26 @@ describe("Specific Themes", () => {
 
     it("should have Cinzel font", () => {
       expect(themes.rpg.font).toBe("Cinzel");
+    });
+  });
+});
+
+describe("Timer Config", () => {
+  it("all themes should have timer config enabled", () => {
+    Object.values(themes).forEach((theme) => {
+      expect(theme.timer, `${theme.id} should have timer`).toBeDefined();
+      expect(theme.timer?.enabled, `${theme.id} timer should be enabled`).toBe(true);
+      expect(theme.timer?.totalTalkMinutes, `${theme.id} should have totalTalkMinutes`).toBeGreaterThan(0);
+    });
+  });
+
+  it("only zombie theme should have zombieAttack effect", () => {
+    Object.values(themes).forEach((theme) => {
+      if (theme.id === "zombie") {
+        expect(theme.effects?.zombieAttack?.enabled).toBe(true);
+      } else {
+        expect(theme.effects?.zombieAttack).toBeUndefined();
+      }
     });
   });
 });
