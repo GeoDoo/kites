@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useKitesStore, useKites, useIsLoaded } from "@/lib/store";
+import { useKitesStore, useKites, useIsLoaded, useCurrentTheme } from "@/lib/store";
 import { KiteList } from "./KiteList";
 import { KiteCanvas } from "./KiteCanvas";
 import { ElementToolbar } from "./ElementToolbar";
 import { ThemeSelector } from "./ThemeSelector";
 import { cn } from "@/lib/utils";
-import { Play, Moon, Sun, Wind } from "lucide-react";
+import { Play, Moon, Sun, Wind, Download, Loader2 } from "lucide-react";
+import { exportToPDF } from "@/lib/export-pdf";
 
 interface EditorLayoutProps {
   onPresentMode?: () => void;
@@ -22,7 +23,10 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
   const isLoaded = useIsLoaded();
   const loadFromAPI = useKitesStore((state) => state.loadFromAPI);
   const initializeIfEmpty = useKitesStore((state) => state.initializeIfEmpty);
+  const themeId = useCurrentTheme();
   const [isDark, setIsDark] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState({ current: 0, total: 0 });
   const hasLoadedRef = useRef(false);
 
   // Load data from database on mount (only once)
@@ -44,6 +48,29 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
   const toggleDarkMode = () => {
     setIsDark(!isDark);
     document.documentElement.classList.toggle("dark");
+  };
+
+  // Export to PDF
+  const handleExportPDF = async () => {
+    if (isExporting || kites.length === 0) return;
+    
+    setIsExporting(true);
+    setExportProgress({ current: 0, total: kites.length });
+    try {
+      await exportToPDF(kites, themeId, {
+        filename: "kites-presentation.pdf",
+        onProgress: (current, total) => {
+          setExportProgress({ current, total });
+        },
+      });
+    } catch (error) {
+      console.error("Export failed:", error);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      alert(`Export failed: ${message}`);
+    } finally {
+      setIsExporting(false);
+      setExportProgress({ current: 0, total: 0 });
+    }
   };
 
   // Show loading state until data is loaded
@@ -88,6 +115,31 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
           >
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
+
+          {/* Export PDF button */}
+          {kites.length > 0 && (
+            <button
+              onClick={handleExportPDF}
+              disabled={isExporting}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-xl",
+                "border border-sky-200 text-sky-600",
+                "hover:bg-sky-50 hover:border-sky-300",
+                "transition-all text-sm font-medium",
+                "disabled:opacity-50 disabled:cursor-not-allowed"
+              )}
+              title="Export to PDF"
+            >
+              {isExporting ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Download size={16} />
+              )}
+              {isExporting 
+                ? `${exportProgress.current}/${exportProgress.total}` 
+                : "PDF"}
+            </button>
+          )}
 
           {/* Present button */}
           {onPresentMode && kites.length > 0 && (
