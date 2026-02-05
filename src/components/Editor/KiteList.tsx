@@ -73,18 +73,36 @@ export function KiteList() {
               className="aspect-video relative overflow-hidden"
               style={{ backgroundColor: theme.colors.background }}
             >
-              {/* Theme background image */}
+              {/* Theme background image with treatment */}
               {(() => {
                 const bgImage = getBackgroundForKite(theme, index);
                 return bgImage && (
-                  <div 
-                    className="absolute inset-0 z-0"
-                    style={{
-                      backgroundImage: `url(${bgImage})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                    }}
-                  />
+                  <>
+                    <div 
+                      className="absolute inset-0 z-0 overflow-hidden"
+                    >
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          backgroundImage: `url(${bgImage})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                          opacity: theme.backgroundTreatment?.opacity ?? 1,
+                          filter: [
+                            theme.backgroundTreatment?.blur ? `blur(${theme.backgroundTreatment.blur * 0.5}px)` : "",
+                            theme.backgroundTreatment?.grayscale ? `grayscale(${theme.backgroundTreatment.grayscale})` : "",
+                            theme.backgroundTreatment?.brightness ? `brightness(${theme.backgroundTreatment.brightness})` : "",
+                          ].filter(Boolean).join(" ") || undefined,
+                        }}
+                      />
+                    </div>
+                    {theme.backgroundTreatment?.overlay && (
+                      <div 
+                        className="absolute inset-0 z-0"
+                        style={{ backgroundColor: theme.backgroundTreatment.overlay }}
+                      />
+                    )}
+                  </>
                 );
               })()}
               

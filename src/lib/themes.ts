@@ -8,6 +8,14 @@ export interface ZombieAttackConfig {
   totalTalkMinutes: number;  // Total presentation time - divided by kite count for per-kite timer
 }
 
+export interface BackgroundTreatment {
+  opacity?: number;      // 0-1, how transparent the bg image is
+  blur?: number;         // px, blur amount
+  grayscale?: number;    // 0-1, grayscale filter
+  brightness?: number;   // 0-2, brightness (1 = normal)
+  overlay?: string;      // Color overlay with alpha (e.g., "rgba(0,0,0,0.5)")
+}
+
 export interface KiteTheme {
   id: string;
   name: string;
@@ -19,9 +27,13 @@ export interface KiteTheme {
     textMuted: string;
     accent: string;
     accentText: string;
+    // Preset content colors for good contrast
+    heading: string;      // Default heading color
+    headingShadow?: string; // Optional text shadow for headings
   };
   backgroundImage?: string;
   backgroundImages?: string[]; // Multiple images for randomization
+  backgroundTreatment?: BackgroundTreatment;
   font?: string;
   style: "sharp" | "rounded" | "pixel";
   effects?: {
@@ -40,12 +52,19 @@ export const themes: Record<string, KiteTheme> = {
     colors: {
       background: "#f0f9ff",
       surface: "#ffffff",
-      text: "#0f172a",
+      text: "#1e3a5f",
       textMuted: "#64748b",
       accent: "#0ea5e9",
       accentText: "#ffffff",
+      heading: "#0c4a6e",
+      headingShadow: "0 2px 4px rgba(255,255,255,0.8)",
     },
     backgroundImage: "/themes/sky-bg.png",
+    backgroundTreatment: {
+      opacity: 0.4,
+      blur: 2,
+      brightness: 1.1,
+    },
     style: "rounded",
   },
 
@@ -56,12 +75,20 @@ export const themes: Record<string, KiteTheme> = {
     colors: {
       background: "#0d1117",
       surface: "#161b22",
-      text: "#00ff00",
+      text: "#33ff33",
       textMuted: "#238636",
       accent: "#ffcc00",
       accentText: "#000000",
+      heading: "#00ff00",
+      headingShadow: "0 0 10px #00ff00, 0 0 20px #00ff0080",
     },
     backgroundImage: "/themes/retro-bg.png",
+    backgroundTreatment: {
+      opacity: 0.3,
+      grayscale: 0.8,
+      brightness: 0.4,
+      overlay: "rgba(0, 20, 0, 0.7)",
+    },
     font: "VT323",
     style: "sharp",
     effects: {
@@ -76,12 +103,20 @@ export const themes: Record<string, KiteTheme> = {
     colors: {
       background: "#0a0a0a",
       surface: "#1a1a2e",
-      text: "#ffffff",
+      text: "#e0e0ff",
       textMuted: "#a0a0a0",
       accent: "#00ffff",
       accentText: "#000000",
+      heading: "#ff00ff",
+      headingShadow: "0 0 10px #ff00ff, 0 0 30px #ff00ff80, 0 0 50px #ff00ff40",
     },
     backgroundImage: "/themes/neon-bg.png",
+    backgroundTreatment: {
+      opacity: 0.5,
+      blur: 3,
+      brightness: 0.6,
+      overlay: "rgba(10, 0, 30, 0.6)",
+    },
     style: "sharp",
     effects: {
       glow: true,
@@ -95,12 +130,20 @@ export const themes: Record<string, KiteTheme> = {
     colors: {
       background: "#f5e6d3",
       surface: "#fff8f0",
-      text: "#2c1810",
+      text: "#3d2914",
       textMuted: "#6b4423",
       accent: "#8b4513",
       accentText: "#ffffff",
+      heading: "#5c3317",
+      headingShadow: "2px 2px 0 rgba(255,248,240,0.8)",
     },
     backgroundImage: "/themes/rpg-bg.png",
+    backgroundTreatment: {
+      opacity: 0.35,
+      blur: 1,
+      brightness: 1.2,
+      overlay: "rgba(245, 230, 211, 0.5)",
+    },
     font: "Cinzel",
     style: "rounded",
     effects: {
@@ -115,10 +158,12 @@ export const themes: Record<string, KiteTheme> = {
     colors: {
       background: "#1a1a0f",
       surface: "#2a2a1a",
-      text: "#c4d4a0",
-      textMuted: "#6b7355",
+      text: "#d4e4b0",
+      textMuted: "#8b9365",
       accent: "#8b0000",
       accentText: "#ffffff",
+      heading: "#e8f0c0",
+      headingShadow: "3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 4px 8px rgba(0,0,0,0.8)",
     },
     backgroundImages: [
       "/themes/zombie-bg.png",
@@ -127,13 +172,20 @@ export const themes: Record<string, KiteTheme> = {
       "/themes/zombie-bg-4.png",
       "/themes/zombie-bg-5.png",
     ],
+    backgroundTreatment: {
+      opacity: 0.6,
+      blur: 2,
+      grayscale: 0.4,
+      brightness: 0.5,
+      overlay: "rgba(20, 25, 10, 0.5)",
+    },
     font: "Creepster",
     style: "sharp",
     effects: {
       noise: true,
       zombieAttack: {
         enabled: true,
-        totalTalkMinutes: 25,  // Total presentation time (25 min) - divided by number of kites
+        totalTalkMinutes: 25,
       },
     },
   },

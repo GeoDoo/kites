@@ -59,16 +59,35 @@ export function KiteView({ kite, index, isActive = false, theme, totalKites }: K
         fontFamily: theme.font ? `"${theme.font}", sans-serif` : undefined,
       }}
     >
-      {/* Theme background image */}
+      {/* Theme background image with treatment */}
       {backgroundImage && (
-        <div 
-          className="absolute inset-0 z-0"
-          style={{
-            backgroundImage: `url(${backgroundImage})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        />
+        <>
+          {/* Background image layer */}
+          <div 
+            className="absolute inset-0 z-0"
+            style={{
+              backgroundImage: `url(${backgroundImage})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              opacity: theme.backgroundTreatment?.opacity ?? 1,
+              filter: [
+                theme.backgroundTreatment?.blur ? `blur(${theme.backgroundTreatment.blur}px)` : "",
+                theme.backgroundTreatment?.grayscale ? `grayscale(${theme.backgroundTreatment.grayscale})` : "",
+                theme.backgroundTreatment?.brightness ? `brightness(${theme.backgroundTreatment.brightness})` : "",
+              ].filter(Boolean).join(" ") || undefined,
+              // Extend slightly to prevent blur edge artifacts
+              margin: theme.backgroundTreatment?.blur ? `-${theme.backgroundTreatment.blur * 2}px` : undefined,
+              padding: theme.backgroundTreatment?.blur ? `${theme.backgroundTreatment.blur * 2}px` : undefined,
+            }}
+          />
+          {/* Color overlay layer */}
+          {theme.backgroundTreatment?.overlay && (
+            <div 
+              className="absolute inset-0 z-0"
+              style={{ backgroundColor: theme.backgroundTreatment.overlay }}
+            />
+          )}
+        </>
       )}
 
       {/* Theme effects - SCANLINES */}
@@ -167,15 +186,33 @@ function PresentationBlock({
     text: 24,
   };
 
+  // Determine the appropriate color based on block type
+  // Headings use theme.colors.heading, text uses theme.colors.text
+  // User-set color (style.color) overrides theme defaults
+  const getTextColor = () => {
+    if (style?.color) return style.color; // User override
+    if (isHeading) return theme.colors.heading;
+    return theme.colors.text;
+  };
+
+  // Get text shadow - headings get special shadow for contrast
+  const getTextShadow = () => {
+    if (theme.effects?.glow) {
+      return `0 0 10px ${theme.colors.accent}, 0 0 20px ${theme.colors.accent}, 0 0 40px ${theme.colors.accent}60`;
+    }
+    if (isHeading && theme.colors.headingShadow) {
+      return theme.colors.headingShadow;
+    }
+    return undefined;
+  };
+
   const baseStyle: React.CSSProperties = {
     fontSize: style?.fontSize || defaultFontSizes[type] || 24,
     fontWeight: style?.fontWeight || (isHeading ? "bold" : undefined),
     textAlign: style?.textAlign,
-    color: style?.color || theme.colors.text,
+    color: getTextColor(),
     fontFamily: theme.font ? `"${theme.font}", sans-serif` : undefined,
-    textShadow: theme.effects?.glow 
-      ? `0 0 10px ${theme.colors.accent}, 0 0 20px ${theme.colors.accent}, 0 0 40px ${theme.colors.accent}60`
-      : undefined,
+    textShadow: getTextShadow(),
   };
 
   const renderContent = () => {

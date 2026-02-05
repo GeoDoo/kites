@@ -159,16 +159,44 @@ export function KiteCanvas({ className }: KiteCanvasProps) {
           boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)",
         }}
       >
-        {/* Theme background image */}
+        {/* Theme background image with treatment */}
         {backgroundImage && (
-          <div 
-            className="absolute inset-0 z-0 pointer-events-none"
-            style={{
-              backgroundImage: `url(${backgroundImage})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          />
+          <>
+            <div 
+              className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
+              style={{
+                borderRadius: "inherit",
+              }}
+            >
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `url(${backgroundImage})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  opacity: theme.backgroundTreatment?.opacity ?? 1,
+                  filter: [
+                    theme.backgroundTreatment?.blur ? `blur(${theme.backgroundTreatment.blur}px)` : "",
+                    theme.backgroundTreatment?.grayscale ? `grayscale(${theme.backgroundTreatment.grayscale})` : "",
+                    theme.backgroundTreatment?.brightness ? `brightness(${theme.backgroundTreatment.brightness})` : "",
+                  ].filter(Boolean).join(" ") || undefined,
+                  // Extend to prevent blur edge artifacts
+                  margin: theme.backgroundTreatment?.blur ? `-${theme.backgroundTreatment.blur * 2}px` : undefined,
+                  padding: theme.backgroundTreatment?.blur ? `${theme.backgroundTreatment.blur * 2}px` : undefined,
+                }}
+              />
+            </div>
+            {/* Color overlay layer */}
+            {theme.backgroundTreatment?.overlay && (
+              <div 
+                className="absolute inset-0 z-0 pointer-events-none"
+                style={{ 
+                  backgroundColor: theme.backgroundTreatment.overlay,
+                  borderRadius: "inherit",
+                }}
+              />
+            )}
+          </>
         )}
 
         {/* Theme effects overlay - SCANLINES */}
