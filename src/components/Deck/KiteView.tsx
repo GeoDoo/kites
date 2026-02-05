@@ -13,13 +13,14 @@ interface KiteViewProps {
   isActive?: boolean;
   theme: KiteTheme;
   totalKites: number;  // Total number of kites for timer calculation
+  timerStarted?: boolean;  // Whether the timer has been started (for presenter view)
 }
 
 /**
  * KiteView Component
  * Renders a single kite in presentation mode (full-screen with scroll-snap)
  */
-export function KiteView({ kite, index, isActive = false, theme, totalKites }: KiteViewProps) {
+export function KiteView({ kite, index, isActive = false, theme, totalKites, timerStarted = true }: KiteViewProps) {
   const backgroundImage = getBackgroundForKite(theme, index);
   const [isAttacked, setIsAttacked] = useState(false);
   const [attackType, setAttackType] = useState<AttackType>("scratch");
@@ -131,7 +132,8 @@ export function KiteView({ kite, index, isActive = false, theme, totalKites }: K
       )}
 
       {/* Presentation Timer - for all themes except zombie (which has its own timer in ZombieAttack) */}
-      {hasTimer && !hasZombieAttack && (
+      {/* Only shown when timerStarted is true */}
+      {hasTimer && !hasZombieAttack && timerStarted && (
         <PresentationTimer
           timerSeconds={timerSeconds}
           isActive={isActive}
@@ -140,7 +142,8 @@ export function KiteView({ kite, index, isActive = false, theme, totalKites }: K
       )}
 
       {/* Zombie Attack Effect - only for zombie theme (includes its own timer) */}
-      {hasZombieAttack && (
+      {/* Only active when timerStarted is true */}
+      {hasZombieAttack && timerStarted && (
         <ZombieAttack
           config={theme.effects!.zombieAttack!}
           timerSeconds={timerSeconds}

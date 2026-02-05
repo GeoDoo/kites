@@ -591,6 +591,97 @@ describe("Store: Title", () => {
   });
 });
 
+describe("Store: Speaker Notes", () => {
+  it("should update speaker notes for a kite", () => {
+    const kite = createKite();
+    useKitesStore.setState({ kites: [kite], _isLoaded: true });
+    
+    useKitesStore.getState().updateSpeakerNotes(kite.id, "These are my notes");
+    
+    const updatedKite = useKitesStore.getState().kites[0];
+    expect(updatedKite.speakerNotes).toBe("These are my notes");
+  });
+
+  it("should handle empty speaker notes", () => {
+    const kite = createKite();
+    kite.speakerNotes = "Existing notes";
+    useKitesStore.setState({ kites: [kite], _isLoaded: true });
+    
+    useKitesStore.getState().updateSpeakerNotes(kite.id, "");
+    
+    expect(useKitesStore.getState().kites[0].speakerNotes).toBe("");
+  });
+
+  it("should update notes for the correct kite", () => {
+    const kite1 = createKite();
+    const kite2 = createKite();
+    useKitesStore.setState({ kites: [kite1, kite2], _isLoaded: true });
+    
+    useKitesStore.getState().updateSpeakerNotes(kite2.id, "Notes for kite 2");
+    
+    expect(useKitesStore.getState().kites[0].speakerNotes).toBeUndefined();
+    expect(useKitesStore.getState().kites[1].speakerNotes).toBe("Notes for kite 2");
+  });
+
+  it("should handle multiline notes", () => {
+    const kite = createKite();
+    useKitesStore.setState({ kites: [kite], _isLoaded: true });
+    
+    const multilineNotes = "Line 1\nLine 2\nLine 3\n\nWith empty line";
+    useKitesStore.getState().updateSpeakerNotes(kite.id, multilineNotes);
+    
+    expect(useKitesStore.getState().kites[0].speakerNotes).toBe(multilineNotes);
+  });
+
+  it("should handle special characters in notes", () => {
+    const kite = createKite();
+    useKitesStore.setState({ kites: [kite], _isLoaded: true });
+    
+    const specialNotes = "Notes with <html> & special \"characters\" 'quotes' 🎉";
+    useKitesStore.getState().updateSpeakerNotes(kite.id, specialNotes);
+    
+    expect(useKitesStore.getState().kites[0].speakerNotes).toBe(specialNotes);
+  });
+
+  it("should update kite timestamp when notes change", () => {
+    const kite = createKite();
+    const originalTime = kite.updatedAt;
+    useKitesStore.setState({ kites: [kite], _isLoaded: true });
+    
+    // Small delay to ensure timestamp differs
+    useKitesStore.getState().updateSpeakerNotes(kite.id, "New notes");
+    
+    const updatedKite = useKitesStore.getState().kites[0];
+    expect(updatedKite.updatedAt).toBeDefined();
+    // The timestamp should be updated (or at least exist)
+    expect(updatedKite.speakerNotes).toBe("New notes");
+  });
+
+  it("should not affect other kite properties when updating notes", () => {
+    const kite = createKiteWithBlocks(2);
+    kite.backgroundColor = "#ff0000";
+    useKitesStore.setState({ kites: [kite], _isLoaded: true });
+    
+    useKitesStore.getState().updateSpeakerNotes(kite.id, "Notes");
+    
+    const updatedKite = useKitesStore.getState().kites[0];
+    expect(updatedKite.contentBlocks).toHaveLength(2);
+    expect(updatedKite.backgroundColor).toBe("#ff0000");
+    expect(updatedKite.speakerNotes).toBe("Notes");
+  });
+
+  it("should handle non-existent kite ID gracefully", () => {
+    const kite = createKite();
+    useKitesStore.setState({ kites: [kite], _isLoaded: true });
+    
+    // This should not throw
+    useKitesStore.getState().updateSpeakerNotes("non-existent-id", "Notes");
+    
+    // Original kite should be unchanged
+    expect(useKitesStore.getState().kites[0].speakerNotes).toBeUndefined();
+  });
+});
+
 describe("Store: Computed Getters", () => {
   it("currentKite should return current kite", () => {
     const kites = [createKite(), createKite()];

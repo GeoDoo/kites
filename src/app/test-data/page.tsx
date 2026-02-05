@@ -217,9 +217,10 @@ function createUniqueKite(index: number) {
   const blocks: any[] = [];
   
   // Randomize title size for each kite
-  const titleSizes: BlockType[] = ["h1", "h2", "h3", "h4"];
-  const titleType = titleSizes[index % 4];
-  const subtitleType = titleSizes[(index + 2) % 4];
+  const titleSizes = ["h1", "h2", "h3", "h4"] as const;
+  type HeadingType = typeof titleSizes[number];
+  const titleType: HeadingType = titleSizes[index % 4];
+  const subtitleType: HeadingType = titleSizes[(index + 2) % 4];
   
   // Add title with varied size
   blocks.push({

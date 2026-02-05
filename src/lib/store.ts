@@ -174,6 +174,7 @@ interface KitesState {
   setCurrentKite: (index: number) => void;
   duplicateKite: (id: string) => string | null;
   updateKiteBackground: (kiteId: string, color: string) => void;
+  updateSpeakerNotes: (kiteId: string, notes: string) => void;
 
   // Block Actions
   addBlock: (type: BlockType, content?: string) => string | null;
@@ -240,7 +241,12 @@ export const useKitesStore = create<KitesState>()(
             console.log("✅ Loaded from database:", data.kites?.length || 0, "kites");
           } catch (error) {
             console.error("Failed to load from API:", error);
-            set({ _isLoaded: true }); // Still mark as loaded so app can function
+            // Mark as loaded but DON'T trigger initializeIfEmpty
+            // by keeping kites as undefined/null to differentiate from "loaded but empty"
+            set((state) => {
+              state._isLoaded = true;
+              // Keep existing kites if any, don't reset to empty
+            });
           }
         },
 
@@ -348,6 +354,16 @@ export const useKitesStore = create<KitesState>()(
             const kite = state.kites.find((k) => k.id === kiteId);
             if (kite) {
               kite.backgroundColor = color;
+              kite.updatedAt = new Date().toISOString();
+            }
+          });
+        },
+
+        updateSpeakerNotes: (kiteId, notes) => {
+          set((state) => {
+            const kite = state.kites.find((k) => k.id === kiteId);
+            if (kite) {
+              kite.speakerNotes = notes;
               kite.updatedAt = new Date().toISOString();
             }
           });

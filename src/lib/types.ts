@@ -51,6 +51,7 @@ export const KiteSchema = z.object({
   id: z.string().uuid(),
   contentBlocks: z.array(ContentBlockSchema),
   backgroundColor: z.string().optional(),
+  speakerNotes: z.string().optional(), // Notes visible only to presenter
   createdAt: z.string().datetime().optional(),
   updatedAt: z.string().datetime().optional(),
 });

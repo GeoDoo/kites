@@ -6,13 +6,14 @@ import { KiteList } from "./KiteList";
 import { KiteCanvas } from "./KiteCanvas";
 import { ElementToolbar } from "./ElementToolbar";
 import { ThemeSelector } from "./ThemeSelector";
+import { SpeakerNotesPanel } from "./SpeakerNotesPanel";
 import { cn } from "@/lib/utils";
-import { Play, Moon, Sun, Wind, Download, Loader2, ChevronDown, FileText, FileSpreadsheet, ExternalLink } from "lucide-react";
+import { Play, Wind, Download, Loader2, ChevronDown, FileText, FileSpreadsheet, ExternalLink } from "lucide-react";
 import { exportToPDF } from "@/lib/export-pdf";
 import { exportToPPTX } from "@/lib/export-pptx";
 
 interface EditorLayoutProps {
-  onPresentMode?: () => void;
+  onPresentMode?: (withPresenterView: boolean) => void;
 }
 
 /**
@@ -27,7 +28,6 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
   const themeId = useCurrentTheme();
   const title = useTitle();
   const setTitle = useKitesStore((state) => state.setTitle);
-  const [isDark, setIsDark] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState({ current: 0, total: 0 });
   const [exportType, setExportType] = useState<"pdf" | "pptx" | "gslides" | null>(null);
@@ -47,9 +47,19 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
   }, [loadFromAPI]);
 
   // Initialize with one kite if empty - ONLY after loading from DB
+  // Add a small delay to ensure the API has fully responded
   useEffect(() => {
     if (isLoaded && kites.length === 0) {
-      initializeIfEmpty();
+      // Double-check by waiting a moment - prevents race conditions
+      const timeout = setTimeout(() => {
+        // Re-check in case kites loaded during the delay
+        const currentKites = useKitesStore.getState().kites;
+        if (currentKites.length === 0) {
+          console.log("📝 No kites found after load, initializing with default...");
+          initializeIfEmpty();
+        }
+      }, 100);
+      return () => clearTimeout(timeout);
     }
   }, [isLoaded, kites.length, initializeIfEmpty]);
 
@@ -85,12 +95,6 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
       setEditedTitle(title);
       setIsEditingTitle(false);
     }
-  };
-
-  // Toggle dark mode
-  const toggleDarkMode = () => {
-    setIsDark(!isDark);
-    document.documentElement.classList.toggle("dark");
   };
 
   // Close export menu when clicking outside
@@ -263,20 +267,6 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
           {/* Theme selector */}
           <ThemeSelector />
 
-          {/* Dark mode toggle */}
-          <button
-            onClick={toggleDarkMode}
-            className={cn(
-              "p-2 rounded-lg",
-              "text-slate-500 hover:text-slate-700",
-              "hover:bg-sky-50",
-              "transition-colors"
-            )}
-            title={isDark ? "Light mode" : "Dark mode"}
-          >
-            {isDark ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-
           {/* Export dropdown */}
           {kites.length > 0 && (
             <div className="relative" ref={exportMenuRef}>
@@ -355,20 +345,37 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
             </div>
           )}
 
-          {/* Present button */}
+          {/* Present button with notes option */}
           {onPresentMode && kites.length > 0 && (
-            <button
-              onClick={onPresentMode}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-xl",
-                "bg-gradient-to-r from-sky-500 to-sky-400 text-white",
-                "hover:from-sky-600 hover:to-sky-500",
-                "transition-all text-sm font-medium shadow-sm hover:shadow-md"
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => onPresentMode(false)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-l-xl",
+                  "bg-gradient-to-r from-sky-500 to-sky-400 text-white",
+                  "hover:from-sky-600 hover:to-sky-500",
+                  "transition-all text-sm font-medium shadow-sm hover:shadow-md"
+                )}
+              >
+                <Play size={16} />
+                Present
+              </button>
+              {kites.some(k => k.speakerNotes?.trim()) && (
+                <button
+                  onClick={() => onPresentMode(true)}
+                  className={cn(
+                    "px-3 py-2 rounded-r-xl",
+                    "bg-gradient-to-r from-amber-500 to-amber-400 text-white",
+                    "hover:from-amber-600 hover:to-amber-500",
+                    "transition-all text-sm font-medium shadow-sm hover:shadow-md",
+                    "border-l border-white/20"
+                  )}
+                  title="Present with speaker notes window"
+                >
+                  📝
+                </button>
               )}
-            >
-              <Play size={16} />
-              Present
-            </button>
+            </div>
           )}
         </div>
       </header>
@@ -385,10 +392,15 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
           <KiteList />
         </aside>
 
-        {/* Main canvas area */}
-        <main className="flex-1 overflow-hidden">
-          <KiteCanvas />
-        </main>
+        {/* Main canvas area with notes panel */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <main className="flex-1 overflow-hidden">
+            <KiteCanvas />
+          </main>
+          
+          {/* Speaker notes panel */}
+          <SpeakerNotesPanel />
+        </div>
       </div>
     </div>
   );

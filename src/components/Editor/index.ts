@@ -7,3 +7,4 @@ export { AlignmentGuides } from "./AlignmentGuides";
 export { ThemeSelector } from "./ThemeSelector";
 export { ImageUploadModal } from "./ImageUploadModal";
 export { ContextMenu } from "./ContextMenu";
+export { SpeakerNotesPanel } from "./SpeakerNotesPanel";

@@ -48,35 +48,6 @@
   --radius-2xl: 1.5rem;
 }
 
-/* Dark theme */
-[data-theme="dark"],
-.dark {
-  --bg-primary: #0c4a6e;      /* sky-900 */
-  --bg-secondary: #075985;    /* sky-800 */
-  --bg-tertiary: #0369a1;     /* sky-700 */
-  --bg-inverse: #f0f9ff;      /* sky-50 */
-
-  --text-primary: #f0f9ff;    /* sky-50 */
-  --text-secondary: #bae6fd;  /* sky-200 */
-  --text-tertiary: #7dd3fc;   /* sky-300 */
-  --text-inverse: #0c4a6e;    /* sky-900 */
-
-  --accent-primary: #38bdf8;  /* sky-400 */
-  --accent-primary-hover: #7dd3fc; /* sky-300 */
-  --accent-secondary: #0ea5e9; /* sky-500 */
-
-  --border-primary: #075985;  /* sky-800 */
-  --border-secondary: #0369a1; /* sky-700 */
-
-  --surface-primary: #0c4a6e; /* sky-900 */
-  --surface-secondary: #075985; /* sky-800 */
-  --surface-elevated: #075985;
-
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
-}
-
 @theme inline {
   /* Map CSS variables to Tailwind theme */
   --color-bg-primary: var(--bg-primary);

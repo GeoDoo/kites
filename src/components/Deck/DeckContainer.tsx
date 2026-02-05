@@ -9,13 +9,14 @@ import { cn } from "@/lib/utils";
 interface DeckContainerProps {
   className?: string;
   onExit?: () => void;
+  timerStarted?: boolean;
 }
 
 /**
  * DeckContainer Component
  * Presentation mode: renders all kites with vertical scroll-snap
  */
-export function DeckContainer({ className, onExit }: DeckContainerProps) {
+export function DeckContainer({ className, onExit, timerStarted = true }: DeckContainerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
   const isScrolling = useRef(false);
@@ -98,7 +99,7 @@ export function DeckContainer({ className, onExit }: DeckContainerProps) {
         onExit?.();
         return;
       }
-
+      
       // Block navigation if currently scrolling (prevents rapid-fire jumpiness)
       if (isScrolling.current) {
         e.preventDefault();
@@ -172,33 +173,38 @@ export function DeckContainer({ className, onExit }: DeckContainerProps) {
   }
 
   return (
-    <div
-      ref={containerRef}
-      onScroll={handleScroll}
-      className={cn(
-        "h-screen w-full overflow-y-scroll",
-        "snap-y snap-mandatory",
-        // Hide until we've scrolled to the correct position
-        !isReady && "opacity-0",
-        isReady && "opacity-100 transition-opacity duration-150",
-        className
-      )}
-      style={{
-        scrollSnapType: "y mandatory",
-        overscrollBehavior: "contain",
-        backgroundColor: theme.colors.background,
-      }}
-    >
-      {kites.map((kite, index) => (
-        <KiteView
-          key={kite.id}
-          kite={kite}
-          index={index}
-          isActive={index === currentKiteIndex}
-          theme={theme}
-          totalKites={kites.length}
-        />
-      ))}
+    <div className="relative h-screen w-full">
+      {/* Main presentation area */}
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className={cn(
+          "h-full w-full overflow-y-scroll",
+          "snap-y snap-mandatory",
+          // Hide until we've scrolled to the correct position
+          !isReady && "opacity-0",
+          isReady && "opacity-100 transition-opacity duration-150",
+          className
+        )}
+        style={{
+          scrollSnapType: "y mandatory",
+          overscrollBehavior: "contain",
+          backgroundColor: theme.colors.background,
+        }}
+      >
+        {kites.map((kite, index) => (
+          <KiteView
+            key={kite.id}
+            kite={kite}
+            index={index}
+            isActive={index === currentKiteIndex}
+            theme={theme}
+            totalKites={kites.length}
+            timerStarted={timerStarted}
+          />
+        ))}
+      </div>
+
     </div>
   );
 }
