@@ -115,6 +115,7 @@ export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset
   const [isAttacking, setIsAttacking] = useState(false);
   const [hordeKey, setHordeKey] = useState(0);
   const [attackType, setAttackType] = useState<AttackType>("scratch");
+  const [isReady, setIsReady] = useState(false);
   
   // Generate randomized horde when slide becomes active
   const hordeConfig = useMemo(() => generateHorde(12), [hordeKey]); // 12 zombies from all angles
@@ -128,18 +129,27 @@ export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset
   // Reset state when slide becomes active - randomly select attack type
   useEffect(() => {
     if (isActive) {
+      setIsReady(false); // Hide zombies during transition
       setTimeLeft(timerSeconds);
       setIsAttacking(false);
       setHordeKey(prev => prev + 1);
       // Randomly select attack type for this slide
       setAttackType(ATTACK_TYPES[Math.floor(Math.random() * ATTACK_TYPES.length)]);
+    } else {
+      setIsReady(false); // Hide when not active
     }
   }, [isActive, timerSeconds]);
 
-  // Initialize positions after horde is generated
+  // Initialize positions after horde is generated, then show
   useEffect(() => {
-    setHordePositions(hordeConfig.map(z => ({ x: z.startX, y: z.startY })));
-  }, [hordeConfig]);
+    const newPositions = hordeConfig.map(z => ({ x: z.startX, y: z.startY }));
+    setHordePositions(newPositions);
+    // Small delay to ensure positions are applied before showing
+    const timer = setTimeout(() => {
+      if (isActive) setIsReady(true);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [hordeConfig, isActive]);
 
   // Countdown timer
   useEffect(() => {
@@ -267,8 +277,8 @@ export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset
         </div>
       </div>
 
-      {/* Walking zombie horde from ALL directions */}
-      {hordeConfig.map((zombie, i) => {
+      {/* Walking zombie horde from ALL directions - only show when ready */}
+      {isReady && hordeConfig.map((zombie, i) => {
         const pos = hordePositions[i] ?? { x: zombie.startX, y: zombie.startY };
         return (
           <div
