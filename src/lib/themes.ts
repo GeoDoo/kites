@@ -215,10 +215,45 @@ export const themes: Record<string, KiteTheme> = {
   },
 };
 
+// Hybrid is a meta-theme: each kite can have its own theme override.
+// It uses Sky as the default and inherits Sky's visual properties for the editor chrome.
+export const hybridTheme: KiteTheme = {
+  id: "hybrid",
+  name: "Hybrid",
+  description: "Mix themes per kite",
+  colors: { ...themes.sky.colors },
+  backgroundImage: themes.sky.backgroundImage,
+  backgroundTreatment: themes.sky.backgroundTreatment,
+  style: "rounded",
+  timer: {
+    enabled: true,
+    totalTalkMinutes: 25,
+  },
+};
+
+// All themes including hybrid (for the theme selector dropdown)
+themes.hybrid = hybridTheme;
+
 export const themeList = Object.values(themes);
 
 export function getTheme(id: string): KiteTheme {
   return themes[id] || themes.sky;
+}
+
+/**
+ * Resolve the effective theme for a specific kite.
+ * - If deck theme is NOT "hybrid", every kite uses the deck theme.
+ * - If deck theme IS "hybrid", use kite.themeOverride (default: "sky").
+ */
+export function resolveThemeForKite(
+  deckThemeId: string,
+  kiteThemeOverride?: string
+): KiteTheme {
+  if (deckThemeId !== "hybrid") {
+    return getTheme(deckThemeId);
+  }
+  // Hybrid mode: resolve per-kite, default to sky
+  return getTheme(kiteThemeOverride || "sky");
 }
 
 /**

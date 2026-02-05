@@ -163,6 +163,7 @@ interface KitesState {
   duplicateKite: (id: string) => string | null;
   updateKiteBackground: (kiteId: string, color: string) => void;
   updateSpeakerNotes: (kiteId: string, notes: string) => void;
+  updateKiteThemeOverride: (kiteId: string, themeId: string | undefined) => void;
 
   // Block Actions
   addBlock: (type: BlockType, content?: string) => string | null;
@@ -336,6 +337,16 @@ export const useKitesStore = create<KitesState>()(
             const kite = state.kites.find((k) => k.id === kiteId);
             if (kite) {
               kite.speakerNotes = notes;
+              kite.updatedAt = new Date().toISOString();
+            }
+          });
+        },
+
+        updateKiteThemeOverride: (kiteId, themeId) => {
+          set((state) => {
+            const kite = state.kites.find((k) => k.id === kiteId);
+            if (kite) {
+              kite.themeOverride = themeId;
               kite.updatedAt = new Date().toISOString();
             }
           });

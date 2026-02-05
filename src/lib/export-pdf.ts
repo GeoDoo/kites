@@ -3,7 +3,7 @@
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import type { Kite, ContentBlock } from "./types";
-import { themes, getBackgroundForKite } from "./themes";
+import { themes, getBackgroundForKite, resolveThemeForKite } from "./themes";
 
 interface ExportOptions {
   filename?: string;
@@ -59,8 +59,11 @@ export async function exportToPDF(
         pdf.addPage([1920, 1080], "landscape");
       }
 
+      // Resolve per-kite theme (handles Hybrid mode)
+      const kiteTheme = resolveThemeForKite(themeId, kite.themeOverride);
+
       // Render kite to the container
-      container.innerHTML = renderKiteToHTML(kite, theme, i);
+      container.innerHTML = renderKiteToHTML(kite, kiteTheme, i);
 
       // Wait for images to load
       await waitForImages(container);
@@ -72,7 +75,7 @@ export async function exportToPDF(
           scale: quality,
           useCORS: true,
           allowTaint: true,
-          backgroundColor: theme.colors.background,
+          backgroundColor: kiteTheme.colors.background,
           width: 1920,
           height: 1080,
           logging: false,

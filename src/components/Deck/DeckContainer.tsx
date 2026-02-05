@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { useKitesStore, useKites, useCurrentKiteIndex, useCurrentTheme } from "@/lib/store";
 import { KiteView } from "./KiteView";
-import { getTheme } from "@/lib/themes";
+import { getTheme, resolveThemeForKite } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
 interface DeckContainerProps {
@@ -192,17 +192,21 @@ export function DeckContainer({ className, onExit, timerStarted = true }: DeckCo
           backgroundColor: theme.colors.background,
         }}
       >
-        {kites.map((kite, index) => (
-          <KiteView
-            key={kite.id}
-            kite={kite}
-            index={index}
-            isActive={index === currentKiteIndex}
-            theme={theme}
-            totalKites={kites.length}
-            timerStarted={timerStarted}
-          />
-        ))}
+        {kites.map((kite, index) => {
+          // In Hybrid mode, each kite resolves its own theme
+          const kiteTheme = resolveThemeForKite(currentThemeId, kite.themeOverride);
+          return (
+            <KiteView
+              key={kite.id}
+              kite={kite}
+              index={index}
+              isActive={index === currentKiteIndex}
+              theme={kiteTheme}
+              totalKites={kites.length}
+              timerStarted={timerStarted}
+            />
+          );
+        })}
       </div>
 
     </div>

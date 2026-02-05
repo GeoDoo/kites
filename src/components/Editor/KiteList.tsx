@@ -1,22 +1,114 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import { useKitesStore, useKites, useCurrentKiteIndex, useCurrentTheme } from "@/lib/store";
-import { getTheme, getBackgroundForKite } from "@/lib/themes";
+import { getTheme, getBackgroundForKite, resolveThemeForKite, themeList } from "@/lib/themes";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, Copy } from "lucide-react";
+import { Plus, Trash2, Copy, Palette, ChevronDown } from "lucide-react";
+
+/**
+ * Per-kite theme picker — shown on each thumbnail when Hybrid mode is active.
+ */
+function KiteThemePicker({
+  kiteId,
+  currentOverride,
+}: {
+  kiteId: string;
+  currentOverride?: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const { updateKiteThemeOverride } = useKitesStore();
+
+  const effectiveId = currentOverride || "sky";
+  const effectiveTheme = getTheme(effectiveId);
+
+  // Exclude "hybrid" from the per-kite picker — it's the meta-theme
+  const pickableThemes = themeList.filter((t) => t.id !== "hybrid");
+
+  // Close on outside click
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [isOpen]);
+
+  return (
+    <div ref={dropdownRef} className="relative z-20">
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className={cn(
+          "flex items-center gap-0.5 px-1 py-0.5 rounded text-[8px] leading-none",
+          "bg-slate-800/60 text-white backdrop-blur-sm",
+          "hover:bg-slate-800/80 transition-colors"
+        )}
+        title="Set theme for this kite"
+      >
+        <div
+          className="w-2 h-2 rounded-sm border border-white/30"
+          style={{ backgroundColor: effectiveTheme.colors.accent }}
+        />
+        <span className="max-w-[40px] truncate">{effectiveTheme.name}</span>
+        <ChevronDown size={7} />
+      </button>
+
+      {isOpen && (
+        <div
+          className="absolute top-full left-0 mt-1 w-32 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-50"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {pickableThemes.map((t) => (
+            <button
+              key={t.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                updateKiteThemeOverride(kiteId, t.id === "sky" ? undefined : t.id);
+                setIsOpen(false);
+              }}
+              className={cn(
+                "w-full flex items-center gap-2 px-2 py-1.5 text-left text-xs hover:bg-slate-50 transition-colors",
+                t.id === effectiveId && "bg-sky-50"
+              )}
+            >
+              <div className="flex items-center gap-px shrink-0">
+                <div
+                  className="w-2.5 h-2.5 rounded-l-sm border border-slate-200"
+                  style={{ backgroundColor: t.colors.background }}
+                />
+                <div
+                  className="w-2.5 h-2.5 rounded-r-sm border border-slate-200"
+                  style={{ backgroundColor: t.colors.accent }}
+                />
+              </div>
+              <span className="text-slate-700 truncate">{t.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * KiteList Component
  * Sidebar showing all kites as thumbnails
  * Supports arrow key navigation (Up/Down)
+ * In Hybrid mode: per-kite theme picker + visually reflects each kite's theme
  */
 export function KiteList() {
   const kites = useKites();
   const currentKiteIndex = useCurrentKiteIndex();
   const { setCurrentKite, addKite, deleteKite, duplicateKite } = useKitesStore();
   const currentThemeId = useCurrentTheme();
-  const theme = getTheme(currentThemeId);
+  const isHybrid = currentThemeId === "hybrid";
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
@@ -92,146 +184,159 @@ export function KiteList() {
 
       {/* Kite thumbnails */}
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
-        {kites.map((kite, index) => (
-          <div
-            key={kite.id}
-            ref={(el) => {
-              if (el) itemRefs.current.set(index, el);
-              else itemRefs.current.delete(index);
-            }}
-            onClick={() => setCurrentKite(index)}
-            className={cn(
-              "group relative cursor-pointer rounded-xl overflow-hidden",
-              "border-2 transition-all shadow-sm",
-              index === currentKiteIndex
-                ? "border-sky-500 shadow-md"
-                : "border-sky-100 hover:border-sky-200"
-            )}
-          >
-            {/* Kite number */}
-            <div className="absolute top-1 left-1 z-10 px-1.5 py-0.5 bg-slate-800/50 text-white text-xs rounded-md backdrop-blur-sm">
-              {index + 1}
-            </div>
+        {kites.map((kite, index) => {
+          // Resolve the effective theme for this specific kite
+          const kiteTheme = resolveThemeForKite(currentThemeId, kite.themeOverride);
 
-            {/* Mini kite preview */}
+          return (
             <div
-              className="aspect-video relative overflow-hidden"
-              style={{ backgroundColor: theme.colors.background }}
+              key={kite.id}
+              ref={(el) => {
+                if (el) itemRefs.current.set(index, el);
+                else itemRefs.current.delete(index);
+              }}
+              onClick={() => setCurrentKite(index)}
+              className={cn(
+                "group relative cursor-pointer rounded-xl overflow-hidden",
+                "border-2 transition-all shadow-sm",
+                index === currentKiteIndex
+                  ? "border-sky-500 shadow-md"
+                  : "border-sky-100 hover:border-sky-200"
+              )}
             >
-              {/* Theme background image with treatment */}
-              {(() => {
-                const bgImage = getBackgroundForKite(theme, index);
-                return bgImage && (
-                  <>
-                    <div 
-                      className="absolute inset-0 z-0 overflow-hidden"
-                    >
-                      <div
-                        className="absolute inset-0"
-                        style={{
-                          backgroundImage: `url(${bgImage})`,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                          opacity: theme.backgroundTreatment?.opacity ?? 1,
-                          filter: [
-                            theme.backgroundTreatment?.blur ? `blur(${theme.backgroundTreatment.blur * 0.5}px)` : "",
-                            theme.backgroundTreatment?.grayscale ? `grayscale(${theme.backgroundTreatment.grayscale})` : "",
-                            theme.backgroundTreatment?.brightness ? `brightness(${theme.backgroundTreatment.brightness})` : "",
-                          ].filter(Boolean).join(" ") || undefined,
-                        }}
-                      />
-                    </div>
-                    {theme.backgroundTreatment?.overlay && (
-                      <div 
-                        className="absolute inset-0 z-0"
-                        style={{ backgroundColor: theme.backgroundTreatment.overlay }}
-                      />
-                    )}
-                  </>
-                );
-              })()}
-              
-              {/* Render mini blocks - sort by zIndex */}
-              {[...kite.contentBlocks]
-                .sort((a, b) => (a.zIndex ?? 1) - (b.zIndex ?? 1))
-                .map((block) => {
-                const isHeading = block.type === "h1" || block.type === "h2" || block.type === "h3" || block.type === "h4";
-                return (
-                  <div
-                    key={block.id}
-                    className="absolute overflow-hidden flex items-center"
-                    style={{
-                      left: `${block.position.x}%`,
-                      top: `${block.position.y}%`,
-                      width: `${block.position.width}%`,
-                      height: `${block.position.height}%`,
-                      zIndex: block.zIndex ?? 1,
-                      justifyContent: block.style?.textAlign === "center" ? "center" : 
-                                     block.style?.textAlign === "right" ? "flex-end" : "flex-start",
-                      textAlign: block.style?.textAlign || "left",
-                    }}
-                  >
-                    {isHeading && (
-                      <div className="text-[4px] font-bold truncate w-full"
-                        style={{ 
-                          textAlign: block.style?.textAlign || "left",
-                          color: theme.colors.text,
-                        }}>
-                        {block.content}
-                      </div>
-                    )}
-                    {block.type === "text" && (
-                      <div className="text-[3px] truncate w-full"
-                        style={{ 
-                          textAlign: block.style?.textAlign || "left",
-                          color: theme.colors.textMuted,
-                        }}>
-                        {block.content}
-                      </div>
-                    )}
-                    {block.type === "image" && block.content ? (
-                      <img 
-                        src={block.content} 
-                        alt="" 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : block.type === "image" ? (
-                      <div 
-                        className="w-full h-full rounded-sm" 
-                        style={{ backgroundColor: theme.colors.surface }}
-                      />
-                    ) : null}
-                  </div>
-                );
-              })}
+              {/* Kite number */}
+              <div className="absolute top-1 left-1 z-10 px-1.5 py-0.5 bg-slate-800/50 text-white text-xs rounded-md backdrop-blur-sm">
+                {index + 1}
+              </div>
 
-              {/* Empty state */}
-              {kite.contentBlocks.length === 0 && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-[6px]" style={{ color: theme.colors.textMuted }}>Empty</span>
+              {/* Per-kite theme picker (Hybrid mode only) */}
+              {isHybrid && (
+                <div className="absolute bottom-1 left-1 z-10">
+                  <KiteThemePicker
+                    kiteId={kite.id}
+                    currentOverride={kite.themeOverride}
+                  />
                 </div>
               )}
-            </div>
 
-            {/* Actions overlay */}
-            <div className="absolute top-1 right-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={(e) => handleDuplicateKite(kite.id, e)}
-                className="p-1 rounded bg-slate-800/50 text-white hover:bg-slate-800/70 backdrop-blur-sm"
-                title="Duplicate"
+              {/* Mini kite preview — uses the resolved theme for this kite */}
+              <div
+                className="aspect-video relative overflow-hidden"
+                style={{ backgroundColor: kiteTheme.colors.background }}
               >
-                <Copy size={10} />
-              </button>
-              <button
-                onClick={(e) => handleDeleteKite(kite.id, e)}
-                className="p-1 rounded bg-slate-800/50 text-white hover:bg-red-500 backdrop-blur-sm"
-                title="Delete"
-              >
-                <Trash2 size={10} />
-              </button>
+                {/* Theme background image with treatment */}
+                {(() => {
+                  const bgImage = getBackgroundForKite(kiteTheme, index);
+                  return bgImage && (
+                    <>
+                      <div className="absolute inset-0 z-0 overflow-hidden">
+                        <div
+                          className="absolute inset-0"
+                          style={{
+                            backgroundImage: `url(${bgImage})`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                            opacity: kiteTheme.backgroundTreatment?.opacity ?? 1,
+                            filter: [
+                              kiteTheme.backgroundTreatment?.blur ? `blur(${kiteTheme.backgroundTreatment.blur * 0.5}px)` : "",
+                              kiteTheme.backgroundTreatment?.grayscale ? `grayscale(${kiteTheme.backgroundTreatment.grayscale})` : "",
+                              kiteTheme.backgroundTreatment?.brightness ? `brightness(${kiteTheme.backgroundTreatment.brightness})` : "",
+                            ].filter(Boolean).join(" ") || undefined,
+                          }}
+                        />
+                      </div>
+                      {kiteTheme.backgroundTreatment?.overlay && (
+                        <div
+                          className="absolute inset-0 z-0"
+                          style={{ backgroundColor: kiteTheme.backgroundTreatment.overlay }}
+                        />
+                      )}
+                    </>
+                  );
+                })()}
+
+                {/* Render mini blocks - sort by zIndex */}
+                {[...kite.contentBlocks]
+                  .sort((a, b) => (a.zIndex ?? 1) - (b.zIndex ?? 1))
+                  .map((block) => {
+                  const isHeading = block.type === "h1" || block.type === "h2" || block.type === "h3" || block.type === "h4";
+                  return (
+                    <div
+                      key={block.id}
+                      className="absolute overflow-hidden flex items-center"
+                      style={{
+                        left: `${block.position.x}%`,
+                        top: `${block.position.y}%`,
+                        width: `${block.position.width}%`,
+                        height: `${block.position.height}%`,
+                        zIndex: block.zIndex ?? 1,
+                        justifyContent: block.style?.textAlign === "center" ? "center" :
+                                       block.style?.textAlign === "right" ? "flex-end" : "flex-start",
+                        textAlign: block.style?.textAlign || "left",
+                      }}
+                    >
+                      {isHeading && (
+                        <div className="text-[4px] font-bold truncate w-full"
+                          style={{
+                            textAlign: block.style?.textAlign || "left",
+                            color: kiteTheme.colors.text,
+                          }}>
+                          {block.content}
+                        </div>
+                      )}
+                      {block.type === "text" && (
+                        <div className="text-[3px] truncate w-full"
+                          style={{
+                            textAlign: block.style?.textAlign || "left",
+                            color: kiteTheme.colors.textMuted,
+                          }}>
+                          {block.content}
+                        </div>
+                      )}
+                      {block.type === "image" && block.content ? (
+                        <img
+                          src={block.content}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      ) : block.type === "image" ? (
+                        <div
+                          className="w-full h-full rounded-sm"
+                          style={{ backgroundColor: kiteTheme.colors.surface }}
+                        />
+                      ) : null}
+                    </div>
+                  );
+                })}
+
+                {/* Empty state */}
+                {kite.contentBlocks.length === 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-[6px]" style={{ color: kiteTheme.colors.textMuted }}>Empty</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions overlay */}
+              <div className="absolute top-1 right-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={(e) => handleDuplicateKite(kite.id, e)}
+                  className="p-1 rounded bg-slate-800/50 text-white hover:bg-slate-800/70 backdrop-blur-sm"
+                  title="Duplicate"
+                >
+                  <Copy size={10} />
+                </button>
+                <button
+                  onClick={(e) => handleDeleteKite(kite.id, e)}
+                  className="p-1 rounded bg-slate-800/50 text-white hover:bg-red-500 backdrop-blur-sm"
+                  title="Delete"
+                >
+                  <Trash2 size={10} />
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Footer */}
@@ -243,4 +348,3 @@ export function KiteList() {
     </div>
   );
 }
-

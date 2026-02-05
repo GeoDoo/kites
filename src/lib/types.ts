@@ -52,6 +52,7 @@ export const KiteSchema = z.object({
   contentBlocks: z.array(ContentBlockSchema),
   backgroundColor: z.string().optional(),
   speakerNotes: z.string().optional(), // Notes visible only to presenter
+  themeOverride: z.string().optional(), // Per-kite theme override (used in Hybrid mode)
   createdAt: z.string().datetime().optional(),
   updatedAt: z.string().datetime().optional(),
 });

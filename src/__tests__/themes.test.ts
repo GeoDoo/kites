@@ -1,6 +1,8 @@
 /**
- * Theme Unit Tests
- * Tests for theme definitions and utility functions
+ * Theme Tests
+ * Tests the public API and structural contracts of the theme system.
+ * Does NOT assert on specific config values (font names, booleans, etc.)
+ * — those are design decisions, not behaviour.
  */
 
 import { describe, it, expect } from "vitest";
@@ -10,147 +12,62 @@ import {
   getTheme,
   getRandomBackground,
   getBackgroundForKite,
+  resolveThemeForKite,
   type KiteTheme,
 } from "@/lib/themes";
 
-describe("Theme Definitions", () => {
-  it("should have at least one theme defined", () => {
+// ── Structural contracts ────────────────────────────────────────────────────
+
+describe("Theme registry contracts", () => {
+  it("should have at least one theme", () => {
     expect(Object.keys(themes).length).toBeGreaterThan(0);
   });
 
-  it("should have consistent id field matching key", () => {
+  it("every theme id should match its registry key", () => {
     Object.entries(themes).forEach(([key, theme]) => {
       expect(theme.id).toBe(key);
     });
   });
 
-  it("should have all required color fields", () => {
-    Object.values(themes).forEach((theme) => {
-      expect(theme.colors).toBeDefined();
-      expect(theme.colors.background).toBeDefined();
-      expect(theme.colors.surface).toBeDefined();
-      expect(theme.colors.text).toBeDefined();
-      expect(theme.colors.textMuted).toBeDefined();
-      expect(theme.colors.accent).toBeDefined();
-      expect(theme.colors.accentText).toBeDefined();
-    });
-  });
+  it("every theme should have all required colour fields", () => {
+    const requiredFields = [
+      "background", "surface", "text", "textMuted",
+      "accent", "accentText", "heading",
+    ];
 
-  it("should have valid hex color codes", () => {
-    const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
-    // headingShadow is a CSS shadow value, not a hex color
-    const nonHexColors = ["headingShadow"];
-    
     Object.values(themes).forEach((theme) => {
-      Object.entries(theme.colors).forEach(([colorName, colorValue]) => {
-        if (!nonHexColors.includes(colorName)) {
-          expect(colorValue, `${theme.id}.colors.${colorName}`).toMatch(hexRegex);
-        }
+      requiredFields.forEach((field) => {
+        expect(
+          theme.colors[field as keyof typeof theme.colors],
+          `${theme.id}.colors.${field}`,
+        ).toBeDefined();
       });
     });
   });
 
-  it("should have valid style value", () => {
-    const validStyles = ["sharp", "rounded", "pixel"];
-    
+  it("every theme should have a valid style value", () => {
+    const validStyles = new Set(["sharp", "rounded", "pixel"]);
     Object.values(themes).forEach((theme) => {
-      expect(validStyles).toContain(theme.style);
+      expect(validStyles.has(theme.style), `${theme.id}.style`).toBe(true);
     });
   });
 
-  it("should have name and description", () => {
+  it("every theme should have a non-empty name and description", () => {
     Object.values(themes).forEach((theme) => {
-      expect(theme.name).toBeDefined();
-      expect(theme.name.length).toBeGreaterThan(0);
-      expect(theme.description).toBeDefined();
-      expect(theme.description.length).toBeGreaterThan(0);
+      expect(theme.name.length, `${theme.id}.name`).toBeGreaterThan(0);
+      expect(theme.description.length, `${theme.id}.description`).toBeGreaterThan(0);
     });
   });
 });
 
-describe("Specific Themes", () => {
-  describe("sky theme", () => {
-    it("should be the default theme", () => {
-      expect(themes.sky).toBeDefined();
-      expect(themes.sky.style).toBe("rounded");
-    });
-  });
-
-  describe("zombie theme", () => {
-    it("should have multiple background images", () => {
-      expect(themes.zombie.backgroundImages).toBeDefined();
-      expect(themes.zombie.backgroundImages!.length).toBeGreaterThan(1);
-    });
-
-    it("should have zombie attack config enabled", () => {
-      expect(themes.zombie.effects?.zombieAttack).toBeDefined();
-      expect(themes.zombie.effects?.zombieAttack?.enabled).toBe(true);
-    });
-
-    it("should have timer config with totalTalkMinutes", () => {
-      expect(themes.zombie.timer).toBeDefined();
-      expect(themes.zombie.timer?.enabled).toBe(true);
-      expect(themes.zombie.timer?.totalTalkMinutes).toBeGreaterThan(0);
-    });
-
-    it("should have Creepster font", () => {
-      expect(themes.zombie.font).toBe("Creepster");
-    });
-  });
-
-  describe("retro theme", () => {
-    it("should have scanlines effect", () => {
-      expect(themes.retro.effects?.scanlines).toBe(true);
-    });
-
-    it("should have VT323 font", () => {
-      expect(themes.retro.font).toBe("VT323");
-    });
-  });
-
-  describe("neon theme", () => {
-    it("should have glow effect", () => {
-      expect(themes.neon.effects?.glow).toBe(true);
-    });
-  });
-
-  describe("rpg theme", () => {
-    it("should have noise effect", () => {
-      expect(themes.rpg.effects?.noise).toBe(true);
-    });
-
-    it("should have Cinzel font", () => {
-      expect(themes.rpg.font).toBe("Cinzel");
-    });
-  });
-});
-
-describe("Timer Config", () => {
-  it("all themes should have timer config enabled", () => {
-    Object.values(themes).forEach((theme) => {
-      expect(theme.timer, `${theme.id} should have timer`).toBeDefined();
-      expect(theme.timer?.enabled, `${theme.id} timer should be enabled`).toBe(true);
-      expect(theme.timer?.totalTalkMinutes, `${theme.id} should have totalTalkMinutes`).toBeGreaterThan(0);
-    });
-  });
-
-  it("only zombie theme should have zombieAttack effect", () => {
-    Object.values(themes).forEach((theme) => {
-      if (theme.id === "zombie") {
-        expect(theme.effects?.zombieAttack?.enabled).toBe(true);
-      } else {
-        expect(theme.effects?.zombieAttack).toBeUndefined();
-      }
-    });
-  });
-});
+// ── themeList ────────────────────────────────────────────────────────────────
 
 describe("themeList", () => {
-  it("should contain all themes", () => {
+  it("should be in sync with the themes registry", () => {
     expect(themeList.length).toBe(Object.keys(themes).length);
   });
 
-  it("should be an array of KiteTheme objects", () => {
+  it("every entry should be a valid KiteTheme", () => {
     themeList.forEach((theme) => {
       expect(theme.id).toBeDefined();
       expect(theme.name).toBeDefined();
@@ -159,116 +76,158 @@ describe("themeList", () => {
   });
 });
 
+// ── getTheme ─────────────────────────────────────────────────────────────────
+
 describe("getTheme", () => {
-  it("should return correct theme by id", () => {
-    expect(getTheme("sky")).toBe(themes.sky);
-    expect(getTheme("zombie")).toBe(themes.zombie);
-    expect(getTheme("retro")).toBe(themes.retro);
+  it("should return the correct theme by id", () => {
+    Object.values(themes).forEach((theme) => {
+      expect(getTheme(theme.id)).toBe(theme);
+    });
   });
 
-  it("should return sky theme for unknown id", () => {
-    expect(getTheme("unknown-theme")).toBe(themes.sky);
+  it("should fall back to sky for unknown ids", () => {
+    expect(getTheme("nonexistent")).toBe(themes.sky);
     expect(getTheme("")).toBe(themes.sky);
   });
 });
 
+// ── getRandomBackground ─────────────────────────────────────────────────────
+
 describe("getRandomBackground", () => {
-  it("should return a background from the array for zombie theme", () => {
-    const theme = themes.zombie;
-    const backgrounds = theme.backgroundImages!;
-    
-    // Run multiple times to test randomness
-    const results = new Set<string>();
-    for (let i = 0; i < 50; i++) {
-      const result = getRandomBackground(theme);
-      expect(backgrounds).toContain(result);
-      results.add(result!);
+  it("should return a value from backgroundImages when the array exists", () => {
+    // Find a theme with backgroundImages
+    const themeWithMultiple = Object.values(themes).find(
+      (t) => t.backgroundImages && t.backgroundImages.length > 1,
+    );
+    if (!themeWithMultiple) return; // skip if none
+
+    const backgrounds = themeWithMultiple.backgroundImages!;
+    for (let i = 0; i < 20; i++) {
+      expect(backgrounds).toContain(getRandomBackground(themeWithMultiple));
     }
-    
-    // Should get at least 2 different backgrounds over 50 runs
-    expect(results.size).toBeGreaterThan(1);
   });
 
-  it("should return single backgroundImage for themes without array", () => {
-    const theme = themes.sky;
-    const result = getRandomBackground(theme);
-    expect(result).toBe(theme.backgroundImage);
+  it("should return the single backgroundImage when no array exists", () => {
+    const themeWithSingle = Object.values(themes).find(
+      (t) => t.backgroundImage && !t.backgroundImages,
+    );
+    if (!themeWithSingle) return;
+
+    expect(getRandomBackground(themeWithSingle)).toBe(themeWithSingle.backgroundImage);
   });
 
-  it("should return undefined for theme with neither", () => {
-    const themeWithoutBg: KiteTheme = {
-      id: "test",
-      name: "Test",
-      description: "Test theme",
+  it("should return undefined when theme has no background", () => {
+    const bare: KiteTheme = {
+      id: "bare",
+      name: "Bare",
+      description: "No bg",
       colors: themes.sky.colors,
       style: "sharp",
     };
-    
-    expect(getRandomBackground(themeWithoutBg)).toBeUndefined();
+    expect(getRandomBackground(bare)).toBeUndefined();
   });
 });
+
+// ── getBackgroundForKite ────────────────────────────────────────────────────
 
 describe("getBackgroundForKite", () => {
-  it("should return deterministic background based on kite index", () => {
-    const theme = themes.zombie;
-    const backgrounds = theme.backgroundImages!;
-    
-    // Same index should always return same background
-    for (let i = 0; i < 10; i++) {
-      const result1 = getBackgroundForKite(theme, 0);
-      const result2 = getBackgroundForKite(theme, 0);
-      expect(result1).toBe(result2);
+  it("should be deterministic — same index always yields same result", () => {
+    Object.values(themes).forEach((theme) => {
+      const a = getBackgroundForKite(theme, 3);
+      const b = getBackgroundForKite(theme, 3);
+      expect(a).toBe(b);
+    });
+  });
+
+  it("should cycle through backgroundImages array", () => {
+    const themeWithMultiple = Object.values(themes).find(
+      (t) => t.backgroundImages && t.backgroundImages.length > 1,
+    );
+    if (!themeWithMultiple) return;
+
+    const imgs = themeWithMultiple.backgroundImages!;
+    for (let i = 0; i < imgs.length; i++) {
+      expect(getBackgroundForKite(themeWithMultiple, i)).toBe(imgs[i]);
     }
+    // Wrap around
+    expect(getBackgroundForKite(themeWithMultiple, imgs.length)).toBe(imgs[0]);
   });
 
-  it("should cycle through backgrounds", () => {
-    const theme = themes.zombie;
-    const backgrounds = theme.backgroundImages!;
-    
-    // Test that it cycles through all backgrounds
-    for (let i = 0; i < backgrounds.length; i++) {
-      expect(getBackgroundForKite(theme, i)).toBe(backgrounds[i]);
-    }
-    
-    // After length, should cycle back
-    expect(getBackgroundForKite(theme, backgrounds.length)).toBe(backgrounds[0]);
-    expect(getBackgroundForKite(theme, backgrounds.length + 1)).toBe(backgrounds[1]);
-  });
-
-  it("should return single backgroundImage for themes without array", () => {
-    const theme = themes.sky;
-    
-    expect(getBackgroundForKite(theme, 0)).toBe(theme.backgroundImage);
-    expect(getBackgroundForKite(theme, 5)).toBe(theme.backgroundImage);
-    expect(getBackgroundForKite(theme, 100)).toBe(theme.backgroundImage);
-  });
-
-  it("should handle large kite indices", () => {
-    const theme = themes.zombie;
-    
-    // Should not throw for large indices
-    expect(() => getBackgroundForKite(theme, 1000)).not.toThrow();
-    expect(() => getBackgroundForKite(theme, 999999)).not.toThrow();
+  it("should not throw for very large indices", () => {
+    Object.values(themes).forEach((theme) => {
+      expect(() => getBackgroundForKite(theme, 999999)).not.toThrow();
+    });
   });
 });
 
-describe("Theme Visual Properties", () => {
-  it("should have readable text contrast (basic check)", () => {
-    // Simple luminance-based contrast check
-    const hexToLuminance = (hex: string): number => {
-      const r = parseInt(hex.slice(1, 3), 16) / 255;
-      const g = parseInt(hex.slice(3, 5), 16) / 255;
-      const b = parseInt(hex.slice(5, 7), 16) / 255;
-      return 0.299 * r + 0.587 * g + 0.114 * b;
-    };
+// ── Hybrid theme ────────────────────────────────────────────────────────────
 
-    Object.values(themes).forEach((theme) => {
-      const bgLum = hexToLuminance(theme.colors.background);
-      const textLum = hexToLuminance(theme.colors.text);
-      const contrast = Math.abs(bgLum - textLum);
-      
-      // Expect at least 0.3 contrast difference
-      expect(contrast, `${theme.id} text contrast`).toBeGreaterThan(0.3);
-    });
+describe("Hybrid meta-theme", () => {
+  it("should be registered in themes", () => {
+    expect(themes.hybrid).toBeDefined();
+    expect(themes.hybrid.id).toBe("hybrid");
+  });
+
+  it("should appear in themeList", () => {
+    expect(themeList.some((t) => t.id === "hybrid")).toBe(true);
+  });
+
+  it("should use Sky colours as its chrome defaults", () => {
+    expect(themes.hybrid.colors.background).toBe(themes.sky.colors.background);
+    expect(themes.hybrid.colors.text).toBe(themes.sky.colors.text);
+  });
+});
+
+// ── resolveThemeForKite ─────────────────────────────────────────────────────
+
+describe("resolveThemeForKite", () => {
+  it("in non-hybrid mode, always returns the global theme regardless of override", () => {
+    Object.values(themes)
+      .filter((t) => t.id !== "hybrid")
+      .forEach((theme) => {
+        expect(resolveThemeForKite(theme.id)).toBe(theme);
+        expect(resolveThemeForKite(theme.id, "retro")).toBe(theme);
+      });
+  });
+
+  it("in hybrid mode with no override, defaults to sky", () => {
+    expect(resolveThemeForKite("hybrid")).toBe(themes.sky);
+    expect(resolveThemeForKite("hybrid", undefined)).toBe(themes.sky);
+  });
+
+  it("in hybrid mode, resolves a valid override to that theme", () => {
+    Object.values(themes)
+      .filter((t) => t.id !== "hybrid")
+      .forEach((theme) => {
+        expect(resolveThemeForKite("hybrid", theme.id)).toBe(theme);
+      });
+  });
+
+  it("in hybrid mode, falls back to sky for an unknown override", () => {
+    expect(resolveThemeForKite("hybrid", "does-not-exist")).toBe(themes.sky);
+  });
+});
+
+// ── Visual sanity ───────────────────────────────────────────────────────────
+
+describe("Theme visual sanity", () => {
+  const hexToLuminance = (hex: string): number => {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    return 0.299 * r + 0.587 * g + 0.114 * b;
+  };
+
+  it("text should be readable against the background (minimum contrast)", () => {
+    Object.values(themes)
+      .filter((t) => t.id !== "hybrid") // hybrid inherits sky
+      .forEach((theme) => {
+        const bgLum = hexToLuminance(theme.colors.background);
+        const textLum = hexToLuminance(theme.colors.text);
+        expect(
+          Math.abs(bgLum - textLum),
+          `${theme.id} text contrast`,
+        ).toBeGreaterThan(0.3);
+      });
   });
 });

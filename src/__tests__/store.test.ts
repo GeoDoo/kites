@@ -5,14 +5,7 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useKitesStore } from "@/lib/store";
-import {
-  createKite,
-  createKiteWithBlocks,
-  createBlock,
-  createHeadingBlock,
-  createTextBlock,
-  randomId,
-} from "./fixtures";
+import { createKite, createKiteWithBlocks } from "./fixtures";
 
 // Reset store before each test
 beforeEach(() => {
@@ -170,23 +163,18 @@ describe("Store: Kite Operations", () => {
 
   describe("reorderKites", () => {
     it("should reorder kites", () => {
-      const kites = [
-        createKite({ id: "kite-1" } as any),
-        createKite({ id: "kite-2" } as any),
-        createKite({ id: "kite-3" } as any),
-      ];
-      // Override IDs for easier testing
-      kites[0].id = "kite-1";
-      kites[1].id = "kite-2";
-      kites[2].id = "kite-3";
+      const kite1 = createKite();
+      const kite2 = createKite();
+      const kite3 = createKite();
+      const kites = [kite1, kite2, kite3];
       useKitesStore.setState({ kites });
       
       useKitesStore.getState().reorderKites(0, 2);
       
       const state = useKitesStore.getState();
-      expect(state.kites[0].id).toBe("kite-2");
-      expect(state.kites[1].id).toBe("kite-3");
-      expect(state.kites[2].id).toBe("kite-1");
+      expect(state.kites[0].id).toBe(kite2.id);
+      expect(state.kites[1].id).toBe(kite3.id);
+      expect(state.kites[2].id).toBe(kite1.id);
     });
 
     it("should update currentKiteIndex when reordering current kite", () => {
@@ -272,15 +260,17 @@ describe("Store: Block Operations", () => {
       expect(useKitesStore.getState().selectedBlockId).toBe(id);
     });
 
-    it("should update kite timestamp", () => {
+    it("should update kite timestamp when adding a block", () => {
       const originalTime = useKitesStore.getState().kites[0].updatedAt;
-      
-      // Small delay to ensure timestamp differs
+
       vi.useFakeTimers();
-      vi.advanceTimersByTime(100);
-      
+      vi.advanceTimersByTime(1000);
+
       useKitesStore.getState().addBlock("text");
-      
+
+      const newTime = useKitesStore.getState().kites[0].updatedAt;
+      expect(newTime).not.toBe(originalTime);
+
       vi.useRealTimers();
     });
 
@@ -452,8 +442,8 @@ describe("Store: Layer Operations", () => {
   describe("bringToFront", () => {
     it("should increase zIndex to be highest", () => {
       const id1 = useKitesStore.getState().addBlock("text");
-      const id2 = useKitesStore.getState().addBlock("text");
-      const id3 = useKitesStore.getState().addBlock("text");
+      useKitesStore.getState().addBlock("text");
+      useKitesStore.getState().addBlock("text");
       
       useKitesStore.getState().bringToFront(id1!);
       
@@ -467,8 +457,8 @@ describe("Store: Layer Operations", () => {
 
   describe("sendToBack", () => {
     it("should set zIndex to lowest (but >= 1)", () => {
-      const id1 = useKitesStore.getState().addBlock("text");
-      const id2 = useKitesStore.getState().addBlock("text");
+      useKitesStore.getState().addBlock("text");
+      useKitesStore.getState().addBlock("text");
       const id3 = useKitesStore.getState().addBlock("text");
       
       useKitesStore.getState().sendToBack(id3!);
@@ -543,11 +533,8 @@ describe("Store: Theme", () => {
     expect(useKitesStore.getState().currentTheme).toBe("zombie");
   });
 
-  it("should default to sky theme", () => {
-    useKitesStore.setState({ currentTheme: undefined as any });
-    
-    // After reset
-    useKitesStore.setState({ currentTheme: "sky" });
+  it("should start with sky as the default theme", () => {
+    // The beforeEach resets to sky — verify that baseline
     expect(useKitesStore.getState().currentTheme).toBe("sky");
   });
 });
@@ -647,14 +634,17 @@ describe("Store: Speaker Notes", () => {
     const kite = createKite();
     const originalTime = kite.updatedAt;
     useKitesStore.setState({ kites: [kite], _isLoaded: true });
-    
-    // Small delay to ensure timestamp differs
+
+    vi.useFakeTimers();
+    vi.advanceTimersByTime(1000);
+
     useKitesStore.getState().updateSpeakerNotes(kite.id, "New notes");
-    
+
     const updatedKite = useKitesStore.getState().kites[0];
-    expect(updatedKite.updatedAt).toBeDefined();
-    // The timestamp should be updated (or at least exist)
+    expect(updatedKite.updatedAt).not.toBe(originalTime);
     expect(updatedKite.speakerNotes).toBe("New notes");
+
+    vi.useRealTimers();
   });
 
   it("should not affect other kite properties when updating notes", () => {

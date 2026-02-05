@@ -5,7 +5,7 @@ import { useKitesStore, useCurrentKite, useCurrentTheme } from "@/lib/store";
 import { CanvasElement } from "./CanvasElement";
 import { AlignmentGuides, calculateGuides } from "./AlignmentGuides";
 import { ContextMenu } from "./ContextMenu";
-import { getTheme, getBackgroundForKite } from "@/lib/themes";
+import { getTheme, getBackgroundForKite, resolveThemeForKite } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
 interface DragState {
@@ -34,7 +34,8 @@ export function KiteCanvas({ className }: KiteCanvasProps) {
   const selectBlock = useKitesStore((state) => state.selectBlock);
   const currentKiteIndex = useKitesStore((state) => state.currentKiteIndex);
   const currentThemeId = useCurrentTheme();
-  const theme = getTheme(currentThemeId);
+  // In Hybrid mode, resolve the per-kite theme; otherwise use the global theme
+  const theme = resolveThemeForKite(currentThemeId, currentKite?.themeOverride);
   const backgroundImage = getBackgroundForKite(theme, currentKiteIndex);
 
   // Handle right-click context menu
