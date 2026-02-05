@@ -13,32 +13,20 @@ let saveTimeout: NodeJS.Timeout | null = null;
 const SAVE_DELAY = 300; // ms - save quickly after changes
 
 // Force immediate save (used before page unload)
-let pendingSaveData: { kites: any[]; currentKiteIndex: number; currentTheme: string; title: string } | null = null;
+let pendingSaveData: { kites: Kite[]; currentKiteIndex: number; currentTheme: string; title: string } | null = null;
 
 async function saveToAPI(data: { kites: Kite[]; currentKiteIndex: number; currentTheme: string; title: string }) {
   try {
-    // Debug: Log the actual content being saved
-    data.kites.forEach((kite, i) => {
-      kite.contentBlocks.forEach((block, j) => {
-        console.log(`📦 Saving Kite ${i} Block ${j} (${block.type}): ${block.content.length} chars`);
-        if (block.type === 'text') {
-          console.log(`   Content preview: "${block.content.slice(0, 100)}${block.content.length > 100 ? '...' : ''}"`);
-        }
-      });
-    });
-    
     const response = await fetch("/api/kites", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (response.ok) {
-      console.log("✅ Saved to database:", data.kites.length, "kites");
-    } else {
-      console.error("❌ Save failed with status:", response.status);
+    if (!response.ok) {
+      console.error("Save failed with status:", response.status);
     }
   } catch (error) {
-    console.error("❌ Failed to save:", error);
+    console.error("Failed to save:", error);
   }
 }
 
@@ -218,18 +206,7 @@ export const useKitesStore = create<KitesState>()(
           try {
             const response = await fetch("/api/kites");
             const data = await response.json();
-            
-            // Debug: Log the actual content being loaded
-            console.log("🔵 Loading from API:", data.kites?.length || 0, "kites");
-            data.kites?.forEach((kite: any, i: number) => {
-              kite.contentBlocks?.forEach((block: any, j: number) => {
-                console.log(`📥 Loaded Kite ${i} Block ${j} (${block.type}): ${block.content?.length || 0} chars`);
-                if (block.type === 'text') {
-                  console.log(`   Content: "${block.content?.slice(0, 150)}${block.content?.length > 150 ? '...' : ''}"`);
-                }
-              });
-            });
-            
+
             set((state) => {
               state.kites = data.kites || [];
               state.currentKiteIndex = data.currentKiteIndex || 0;
@@ -237,15 +214,10 @@ export const useKitesStore = create<KitesState>()(
               state.title = data.title || "Untitled Presentation";
               state._isLoaded = true;
             });
-            
-            console.log("✅ Loaded from database:", data.kites?.length || 0, "kites");
           } catch (error) {
             console.error("Failed to load from API:", error);
-            // Mark as loaded but DON'T trigger initializeIfEmpty
-            // by keeping kites as undefined/null to differentiate from "loaded but empty"
             set((state) => {
               state._isLoaded = true;
-              // Keep existing kites if any, don't reset to empty
             });
           }
         },
@@ -564,20 +536,14 @@ useKitesStore.subscribe(
     _isLoaded: state._isLoaded 
   }),
   (current, previous) => {
-    // Don't save until initial load is complete
-    if (!current._isLoaded) {
-      console.log("⏳ Waiting for load before saving...");
-      return;
-    }
-    
-    // Only save if data actually changed (not just selection or load state)
+    if (!current._isLoaded) return;
+
     const kitesChanged = current.kites !== previous.kites;
     const indexChanged = current.currentKiteIndex !== previous.currentKiteIndex;
     const themeChanged = current.currentTheme !== previous.currentTheme;
     const titleChanged = current.title !== previous.title;
     
     if (kitesChanged || indexChanged || themeChanged || titleChanged) {
-      console.log("📝 State changed, scheduling save...", { kitesChanged, indexChanged, themeChanged, titleChanged });
       debouncedSave({
         kites: current.kites,
         currentKiteIndex: current.currentKiteIndex,
@@ -600,10 +566,6 @@ export const useCurrentKiteIndex = () =>
   useKitesStore((state) => state.currentKiteIndex);
 
 export const useIsLoaded = () =>
-  useKitesStore((state) => state._isLoaded);
-
-// Keep old name for backwards compatibility
-export const useHasHydrated = () =>
   useKitesStore((state) => state._isLoaded);
 
 export const useSelectedBlock = () => {

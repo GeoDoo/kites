@@ -55,7 +55,6 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
         // Re-check in case kites loaded during the delay
         const currentKites = useKitesStore.getState().kites;
         if (currentKites.length === 0) {
-          console.log("📝 No kites found after load, initializing with default...");
           initializeIfEmpty();
         }
       }, 100);

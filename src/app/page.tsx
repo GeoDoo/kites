@@ -17,7 +17,7 @@ function checkAndClearStorage() {
     localStorage.removeItem(testKey);
   } catch (e) {
     // Storage is full or corrupted - clear kites-storage
-    console.warn("Storage issue detected, clearing kites-storage...");
+    // Storage is full or corrupted - attempt to recover
     try {
       localStorage.removeItem("kites-storage");
       window.location.reload();
@@ -189,7 +189,7 @@ export default function Home() {
           height: 400,
         });
       } catch (err) {
-        console.log("PiP not available, using popup");
+        // PiP not available, fall back to popup
       }
     }
 

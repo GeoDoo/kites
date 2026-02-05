@@ -214,7 +214,7 @@ const LAYOUT_PRESETS = [
 function createUniqueKite(index: number) {
   const now = new Date().toISOString();
   const layout = LAYOUT_PRESETS[index % LAYOUT_PRESETS.length];
-  const blocks: any[] = [];
+  const blocks: ReturnType<typeof createRandomBlock>[] = [];
   
   // Randomize title size for each kite
   const titleSizes = ["h1", "h2", "h3", "h4"] as const;
