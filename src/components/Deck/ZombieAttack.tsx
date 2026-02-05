@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { ZombieAttackConfig } from "@/lib/themes";
 
 interface ZombieAttackProps {
@@ -10,37 +10,128 @@ interface ZombieAttackProps {
   onReset: () => void;
 }
 
+// Direction zombie can come from
+type Direction = "left" | "right" | "top" | "bottom" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
+
+// Zombie horde member configuration
+interface HordeZombie {
+  id: number;
+  emoji: string;
+  size: number;
+  direction: Direction;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  startDelay: number;
+  speedVariation: number;
+  rotation: number; // Rotation to face center
+}
+
+// Zombie sprites only (no skulls - just the undead walkers)
+const ZOMBIE_SPRITES = ["🧟", "🧟‍♂️", "🧟‍♀️"];
+
+const DIRECTIONS: Direction[] = [
+  "left", "right", "top", "bottom", 
+  "top-left", "top-right", "bottom-left", "bottom-right"
+];
+
+// Get start position based on direction (off-screen)
+function getStartPosition(direction: Direction): { x: number; y: number } {
+  const offset = 15; // How far off-screen
+  const randomSpread = () => 20 + Math.random() * 60; // 20-80% for spread along edge
+  
+  switch (direction) {
+    case "left":
+      return { x: -offset, y: randomSpread() };
+    case "right":
+      return { x: 100 + offset, y: randomSpread() };
+    case "top":
+      return { x: randomSpread(), y: -offset };
+    case "bottom":
+      return { x: randomSpread(), y: 100 + offset };
+    case "top-left":
+      return { x: -offset, y: -offset + Math.random() * 20 };
+    case "top-right":
+      return { x: 100 + offset, y: -offset + Math.random() * 20 };
+    case "bottom-left":
+      return { x: -offset, y: 80 + offset + Math.random() * 20 };
+    case "bottom-right":
+      return { x: 100 + offset, y: 80 + offset + Math.random() * 20 };
+  }
+}
+
+// Get rotation angle to face the center
+function getRotation(direction: Direction): number {
+  switch (direction) {
+    case "left": return 0;
+    case "right": return 180;
+    case "top": return 90;
+    case "bottom": return -90;
+    case "top-left": return 45;
+    case "top-right": return 135;
+    case "bottom-left": return -45;
+    case "bottom-right": return -135;
+  }
+}
+
+// Generate randomized horde from all directions
+function generateHorde(count: number): HordeZombie[] {
+  return Array.from({ length: count }, (_, i) => {
+    const direction = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
+    const start = getStartPosition(direction);
+    // End position: cluster around center with some randomness
+    const endX = 40 + Math.random() * 20; // 40-60%
+    const endY = 35 + Math.random() * 30; // 35-65%
+    
+    return {
+      id: i,
+      emoji: ZOMBIE_SPRITES[Math.floor(Math.random() * ZOMBIE_SPRITES.length)],
+      size: 50 + Math.random() * 100, // 50-150px
+      direction,
+      startX: start.x,
+      startY: start.y,
+      endX,
+      endY,
+      startDelay: Math.random() * 4, // 0-4 seconds delay
+      speedVariation: 0.6 + Math.random() * 0.8, // 0.6x - 1.4x speed
+      rotation: getRotation(direction),
+    };
+  });
+}
+
 /**
  * ZombieAttack Component
- * Displays a zombie walking toward text with a countdown timer
+ * Displays a horde of zombies attacking from ALL directions with countdown timer
  * When timer hits 0, triggers the attack effect on text
  */
 export function ZombieAttack({ config, isActive, onAttack, onReset }: ZombieAttackProps) {
   const [timeLeft, setTimeLeft] = useState(config.timerSeconds);
   const [isAttacking, setIsAttacking] = useState(false);
+  const [hordeKey, setHordeKey] = useState(0);
   
-  // Zombie position: starts off-screen right (110%), ends at center (50%)
-  const START_POSITION = 110;
-  const END_POSITION = 50;
-  const [zombiePosition, setZombiePosition] = useState(START_POSITION);
+  // Generate randomized horde when slide becomes active
+  const hordeConfig = useMemo(() => generateHorde(12), [hordeKey]); // 12 zombies from all angles
+  
+  // Track positions for each zombie { x, y }
+  const [hordePositions, setHordePositions] = useState<{ x: number; y: number }[]>([]);
 
-  // Calculate zombie speed to sync EXACTLY with timer
-  // Distance to travel = START - END = 60%
-  // Timer counts down every 1 second, walking updates every 100ms
-  // Total walk updates = timerSeconds * 10
-  // Speed per update = distance / total_updates
-  const distance = START_POSITION - END_POSITION;
+  // Calculate base speed - zombies need to travel their distance in timerSeconds
   const totalUpdates = config.timerSeconds * 10;
-  const zombieSpeed = distance / totalUpdates;
 
   // Reset state when slide becomes active
   useEffect(() => {
     if (isActive) {
       setTimeLeft(config.timerSeconds);
-      setZombiePosition(START_POSITION);
       setIsAttacking(false);
+      setHordeKey(prev => prev + 1);
     }
   }, [isActive, config.timerSeconds]);
+
+  // Initialize positions after horde is generated
+  useEffect(() => {
+    setHordePositions(hordeConfig.map(z => ({ x: z.startX, y: z.startY })));
+  }, [hordeConfig]);
 
   // Countdown timer
   useEffect(() => {
@@ -66,24 +157,60 @@ export function ZombieAttack({ config, isActive, onAttack, onReset }: ZombieAtta
     }
   }, [isAttacking, onAttack]);
 
-  // Zombie walking animation - synced with timer
+  // Horde walking animation - each zombie moves toward center
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive || hordePositions.length === 0) return;
 
+    const startTime = Date.now();
+    
     const interval = setInterval(() => {
-      setZombiePosition((prev) => {
-        // Stop at target when attacking
-        if (isAttacking && prev <= END_POSITION) {
-          return END_POSITION;
-        }
-        // Keep walking until we reach target
-        const newPos = prev - zombieSpeed;
-        return Math.max(newPos, END_POSITION);
-      });
+      const elapsed = (Date.now() - startTime) / 1000;
+      
+      setHordePositions(prev => 
+        prev.map((pos, i) => {
+          const zombie = hordeConfig[i];
+          if (!zombie) return pos;
+          
+          // Don't move until delay has passed
+          if (elapsed < zombie.startDelay) {
+            return { x: zombie.startX, y: zombie.startY };
+          }
+          
+          // Calculate distance and speed for this zombie
+          const distX = zombie.endX - zombie.startX;
+          const distY = zombie.endY - zombie.startY;
+          const totalDist = Math.sqrt(distX * distX + distY * distY);
+          
+          // Adjust speed based on distance so all zombies arrive roughly together
+          const baseSpeed = totalDist / totalUpdates;
+          const speed = baseSpeed * zombie.speedVariation;
+          
+          // Calculate movement direction
+          const angle = Math.atan2(distY, distX);
+          const moveX = Math.cos(angle) * speed;
+          const moveY = Math.sin(angle) * speed;
+          
+          // Calculate new position
+          let newX = pos.x + moveX;
+          let newY = pos.y + moveY;
+          
+          // Check if we've reached or passed the target
+          const remainingX = zombie.endX - newX;
+          const remainingY = zombie.endY - newY;
+          const passedTarget = (distX > 0 ? remainingX <= 0 : remainingX >= 0) &&
+                              (distY > 0 ? remainingY <= 0 : remainingY >= 0);
+          
+          if (passedTarget || isAttacking) {
+            return { x: zombie.endX, y: zombie.endY };
+          }
+          
+          return { x: newX, y: newY };
+        })
+      );
     }, 100);
 
     return () => clearInterval(interval);
-  }, [isActive, isAttacking, zombieSpeed]);
+  }, [isActive, isAttacking, hordeConfig, hordePositions.length, totalUpdates]);
 
   if (!isActive || !config.enabled) return null;
 
@@ -107,42 +234,51 @@ export function ZombieAttack({ config, isActive, onAttack, onReset }: ZombieAtta
           {isAttacking ? (
             <span className="flex items-center gap-3 text-4xl">
               <span className="text-5xl">💀</span>
-              <span>BRAAAINS!</span>
+              <span>SURROUNDED!</span>
             </span>
           ) : (
             <span className="flex items-center gap-3">
               <span className="text-3xl">{timeLeft <= 3 ? "☠️" : "⏱️"}</span>
               <span className="text-3xl">
-                {timeLeft <= 3 ? `RUN! ${timeLeft}s` : `Survive: ${timeLeft}s`}
+                {timeLeft <= 3 ? `THEY'RE EVERYWHERE! ${timeLeft}s` : `Survive: ${timeLeft}s`}
               </span>
             </span>
           )}
         </div>
       </div>
 
-      {/* Walking zombie - BIG and menacing */}
-      <div
-        className="absolute bottom-0 z-40 pointer-events-none"
-        style={{
-          left: `${zombiePosition}%`,
-          transform: "translateX(-50%)",
-          transition: "left 100ms linear",
-        }}
-      >
-        <div 
-          className={`
-            leading-none
-            ${isAttacking ? "animate-zombie-attack" : "animate-zombie-walk"}
-          `}
-          style={{
-            fontSize: "min(300px, 30vh)", // Huge zombie, responsive to screen
-            filter: "drop-shadow(0 0 40px rgba(0,0,0,0.9)) drop-shadow(0 0 80px rgba(139,0,0,0.5))",
-            transform: "scaleX(-1)", // Face left (toward text)
-          }}
-        >
-          🧟
-        </div>
-      </div>
+      {/* Walking zombie horde from ALL directions */}
+      {hordeConfig.map((zombie, i) => {
+        const pos = hordePositions[i] ?? { x: zombie.startX, y: zombie.startY };
+        return (
+          <div
+            key={zombie.id}
+            className="absolute z-40 pointer-events-none"
+            style={{
+              left: `${pos.x}%`,
+              top: `${pos.y}%`,
+              transform: "translate(-50%, -50%)",
+              transition: "left 100ms linear, top 100ms linear",
+              zIndex: 40 + Math.floor(pos.y), // Lower zombies (higher Y) in front
+            }}
+          >
+            <div 
+              className={`
+                leading-none
+                ${isAttacking ? "animate-zombie-attack" : "animate-zombie-walk"}
+              `}
+              style={{
+                fontSize: `${zombie.size}px`,
+                filter: `drop-shadow(0 0 ${zombie.size / 4}px rgba(0,0,0,0.9))`,
+                transform: `rotate(${zombie.rotation}deg)`,
+                animationDelay: `${(zombie.id * 0.15) % 0.6}s`,
+              }}
+            >
+              {zombie.emoji}
+            </div>
+          </div>
+        );
+      })}
 
       {/* Blood splatter overlay when attacking */}
       {isAttacking && (
