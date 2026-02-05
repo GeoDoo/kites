@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { type Kite, type ContentBlock } from "@/lib/types";
 import { type KiteTheme, getBackgroundForKite } from "@/lib/themes";
 import { cn } from "@/lib/utils";
-import { ZombieAttack } from "./ZombieAttack";
+import { ZombieAttack, type AttackType } from "./ZombieAttack";
 
 interface KiteViewProps {
   kite: Kite;
@@ -21,6 +21,7 @@ interface KiteViewProps {
 export function KiteView({ kite, index, isActive = false, theme, totalKites }: KiteViewProps) {
   const backgroundImage = getBackgroundForKite(theme, index);
   const [isAttacked, setIsAttacked] = useState(false);
+  const [attackType, setAttackType] = useState<AttackType>("scratch");
   
   // Calculate timer per kite: total talk time / number of kites
   const timerSeconds = theme.effects?.zombieAttack?.totalTalkMinutes
@@ -34,8 +35,9 @@ export function KiteView({ kite, index, isActive = false, theme, totalKites }: K
     }
   }, [isActive]);
 
-  // Handle zombie attack
-  const handleZombieAttack = useCallback(() => {
+  // Handle zombie attack - receives attack type from ZombieAttack
+  const handleZombieAttack = useCallback((type: AttackType) => {
+    setAttackType(type);
     setIsAttacked(true);
   }, []);
 
@@ -126,6 +128,7 @@ export function KiteView({ kite, index, isActive = false, theme, totalKites }: K
           block={block} 
           theme={theme} 
           isAttacked={isAttacked && theme.effects?.zombieAttack?.enabled}
+          attackType={attackType}
         />
       ))}
     </section>
@@ -139,16 +142,21 @@ export function KiteView({ kite, index, isActive = false, theme, totalKites }: K
 function PresentationBlock({ 
   block, 
   theme, 
-  isAttacked = false 
+  isAttacked = false,
+  attackType = "scratch"
 }: { 
   block: ContentBlock; 
   theme: KiteTheme;
   isAttacked?: boolean;
+  attackType?: AttackType;
 }) {
   const { type, position, content, style } = block;
 
   const isHeading = type === "h1" || type === "h2" || type === "h3" || type === "h4";
   const isTextBlock = isHeading || type === "text";
+  
+  // Get attack-specific CSS class
+  const attackClass = isAttacked ? `zombie-attack-${attackType}` : "";
 
   // Default font sizes for each type (in case style is missing)
   const defaultFontSizes: Record<string, number> = {
@@ -186,7 +194,7 @@ function PresentationBlock({
               isHeading && "font-bold",
               "[&_blockquote]:border-l-4 [&_blockquote]:border-current [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:opacity-80",
               "[&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6",
-              isAttacked && "zombie-text-attacked"
+              attackClass
             )}
             style={baseStyle}
             dangerouslySetInnerHTML={{ __html: content }}
@@ -238,9 +246,9 @@ function PresentationBlock({
     >
       {renderContent()}
       
-      {/* Scratch marks overlay when attacked */}
+      {/* Attack-specific overlay */}
       {isAttacked && isTextBlock && (
-        <div className="zombie-scratch-overlay" />
+        <div className={`zombie-overlay-${attackType}`} />
       )}
     </div>
   );

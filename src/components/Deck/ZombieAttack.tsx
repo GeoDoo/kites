@@ -3,11 +3,15 @@
 import { useState, useEffect, useMemo } from "react";
 import type { ZombieAttackConfig } from "@/lib/themes";
 
+// 5 different attack types for variety
+export type AttackType = "scratch" | "infection" | "devour" | "drag" | "splatter";
+const ATTACK_TYPES: AttackType[] = ["scratch", "infection", "devour", "drag", "splatter"];
+
 interface ZombieAttackProps {
   config: ZombieAttackConfig;
   timerSeconds: number;  // Calculated time per kite (totalTalkTime / numKites)
   isActive: boolean;
-  onAttack: () => void;
+  onAttack: (attackType: AttackType) => void;  // Now passes attack type
   onReset: () => void;
 }
 
@@ -110,6 +114,7 @@ export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset
   const [timeLeft, setTimeLeft] = useState(timerSeconds);
   const [isAttacking, setIsAttacking] = useState(false);
   const [hordeKey, setHordeKey] = useState(0);
+  const [attackType, setAttackType] = useState<AttackType>("scratch");
   
   // Generate randomized horde when slide becomes active
   const hordeConfig = useMemo(() => generateHorde(12), [hordeKey]); // 12 zombies from all angles
@@ -120,12 +125,14 @@ export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset
   // Calculate base speed - zombies need to travel their distance in timerSeconds
   const totalUpdates = timerSeconds * 10;
 
-  // Reset state when slide becomes active
+  // Reset state when slide becomes active - randomly select attack type
   useEffect(() => {
     if (isActive) {
       setTimeLeft(timerSeconds);
       setIsAttacking(false);
       setHordeKey(prev => prev + 1);
+      // Randomly select attack type for this slide
+      setAttackType(ATTACK_TYPES[Math.floor(Math.random() * ATTACK_TYPES.length)]);
     }
   }, [isActive, timerSeconds]);
 
@@ -154,9 +161,9 @@ export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset
   // Trigger attack callback when isAttacking becomes true
   useEffect(() => {
     if (isAttacking) {
-      onAttack();
+      onAttack(attackType);
     }
-  }, [isAttacking, onAttack]);
+  }, [isAttacking, onAttack, attackType]);
 
   // Horde walking animation - each zombie moves toward center
   useEffect(() => {
@@ -234,8 +241,20 @@ export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset
         >
           {isAttacking ? (
             <span className="flex items-center gap-3 text-4xl">
-              <span className="text-5xl">💀</span>
-              <span>SURROUNDED!</span>
+              <span className="text-5xl">
+                {attackType === "scratch" && "🩸"}
+                {attackType === "infection" && "🦠"}
+                {attackType === "devour" && "🦷"}
+                {attackType === "drag" && "🪦"}
+                {attackType === "splatter" && "💥"}
+              </span>
+              <span>
+                {attackType === "scratch" && "CLAWED!"}
+                {attackType === "infection" && "INFECTED!"}
+                {attackType === "devour" && "DEVOURED!"}
+                {attackType === "drag" && "DRAGGED UNDER!"}
+                {attackType === "splatter" && "OBLITERATED!"}
+              </span>
             </span>
           ) : (
             <span className="flex items-center gap-3">
@@ -318,7 +337,16 @@ export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset
           100% { opacity: 0.3; }
         }
         
-        @keyframes textShake {
+        .animate-zombie-walk {
+          animation: zombieWalk 0.4s ease-in-out infinite;
+        }
+        
+        .animate-zombie-attack {
+          animation: zombieAttack 0.5s ease-out forwards;
+        }
+        
+        /* ===== ATTACK TYPE 1: SCRATCH ===== */
+        @keyframes scratchShake {
           0%, 100% { transform: translate(0, 0) rotate(0deg); }
           10% { transform: translate(-5px, -5px) rotate(-1deg); }
           20% { transform: translate(5px, 5px) rotate(1deg); }
@@ -331,70 +359,130 @@ export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset
           90% { transform: translate(-3px, -3px) rotate(0deg); }
         }
         
-        @keyframes textBleed {
-          0% { 
-            filter: none;
-            color: inherit;
-          }
-          30% {
-            filter: blur(1px);
-            color: #8b0000;
-          }
-          60% {
-            filter: blur(2px);
-            color: #660000;
-          }
-          100% {
-            filter: blur(3px);
-            color: #440000;
-            opacity: 0.6;
-          }
+        @keyframes scratchBleed {
+          0% { filter: none; color: inherit; }
+          30% { filter: blur(1px); color: #8b0000; }
+          60% { filter: blur(2px); color: #660000; }
+          100% { filter: blur(3px); color: #440000; opacity: 0.6; }
         }
         
-        @keyframes scratchMark {
-          0% { 
-            clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
-            opacity: 0;
-          }
-          100% { 
-            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-            opacity: 1;
-          }
+        .zombie-attack-scratch {
+          animation: scratchShake 0.5s ease-in-out, scratchBleed 2s ease-out 0.5s forwards;
         }
         
-        .animate-zombie-walk {
-          animation: zombieWalk 0.4s ease-in-out infinite;
-        }
-        
-        .animate-zombie-attack {
-          animation: zombieAttack 0.5s ease-out forwards;
-        }
-        
-        .zombie-text-attacked {
-          animation: textShake 0.5s ease-in-out, textBleed 2s ease-out 0.5s forwards;
-        }
-        
-        .zombie-scratch-overlay {
+        .zombie-overlay-scratch {
           position: absolute;
           inset: 0;
-          background: linear-gradient(
-            135deg,
-            transparent 0%,
-            transparent 45%,
-            rgba(139, 0, 0, 0.6) 45%,
-            rgba(139, 0, 0, 0.6) 47%,
-            transparent 47%,
-            transparent 52%,
-            rgba(139, 0, 0, 0.5) 52%,
-            rgba(139, 0, 0, 0.5) 54%,
-            transparent 54%,
-            transparent 58%,
-            rgba(139, 0, 0, 0.4) 58%,
-            rgba(139, 0, 0, 0.4) 60%,
-            transparent 60%
-          );
-          animation: scratchMark 0.3s ease-out forwards;
+          background: linear-gradient(135deg, transparent 45%, rgba(139,0,0,0.6) 45%, rgba(139,0,0,0.6) 47%, transparent 47%, transparent 52%, rgba(139,0,0,0.5) 52%, rgba(139,0,0,0.5) 54%, transparent 54%, transparent 58%, rgba(139,0,0,0.4) 58%, rgba(139,0,0,0.4) 60%, transparent 60%);
+          animation: fadeIn 0.3s ease-out forwards;
           pointer-events: none;
+        }
+        
+        /* ===== ATTACK TYPE 2: INFECTION ===== */
+        @keyframes infectionPulse {
+          0% { transform: scale(1); filter: none; }
+          20% { transform: scale(1.02); filter: hue-rotate(60deg) saturate(2); }
+          40% { transform: scale(0.98); filter: hue-rotate(90deg) saturate(3); }
+          60% { transform: scale(1.01); filter: hue-rotate(120deg) saturate(2) blur(1px); }
+          80% { transform: scale(0.99); filter: hue-rotate(100deg) saturate(1.5) blur(2px); }
+          100% { transform: scale(1); filter: hue-rotate(80deg) saturate(0.5) blur(3px); color: #4a7023; opacity: 0.7; }
+        }
+        
+        @keyframes drip {
+          0% { transform: translateY(0); opacity: 1; }
+          100% { transform: translateY(30px); opacity: 0; }
+        }
+        
+        .zombie-attack-infection {
+          animation: infectionPulse 2.5s ease-in-out forwards;
+          color: #6b8e23 !important;
+        }
+        
+        .zombie-overlay-infection {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(ellipse at center, rgba(107,142,35,0.4) 0%, rgba(85,107,47,0.2) 50%, transparent 70%);
+          animation: fadeIn 0.5s ease-out forwards;
+          pointer-events: none;
+        }
+        
+        /* ===== ATTACK TYPE 3: DEVOUR ===== */
+        @keyframes devourChomp {
+          0% { clip-path: inset(0 0 0 0); transform: scale(1); }
+          15% { clip-path: inset(5% 0 0 0); transform: scale(0.98); }
+          30% { clip-path: inset(10% 5% 5% 0); transform: scale(0.95); }
+          45% { clip-path: inset(20% 10% 10% 5%); transform: scale(0.9); }
+          60% { clip-path: inset(30% 20% 20% 15%); transform: scale(0.85); }
+          75% { clip-path: inset(40% 30% 30% 25%); transform: scale(0.75); opacity: 0.7; }
+          90% { clip-path: inset(50% 40% 40% 35%); transform: scale(0.6); opacity: 0.4; }
+          100% { clip-path: inset(50% 50% 50% 50%); transform: scale(0.3); opacity: 0; }
+        }
+        
+        .zombie-attack-devour {
+          animation: devourChomp 2s ease-in forwards;
+        }
+        
+        .zombie-overlay-devour {
+          position: absolute;
+          inset: 0;
+          background: repeating-conic-gradient(from 0deg, transparent 0deg 10deg, rgba(139,0,0,0.3) 10deg 20deg);
+          animation: fadeIn 0.3s ease-out forwards, spin 2s linear;
+          pointer-events: none;
+        }
+        
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        /* ===== ATTACK TYPE 4: DRAG ===== */
+        @keyframes dragDown {
+          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+          20% { transform: translateY(10px) rotate(-2deg); opacity: 1; }
+          40% { transform: translateY(30px) rotate(3deg); opacity: 0.9; }
+          60% { transform: translateY(80px) rotate(-5deg); opacity: 0.7; }
+          80% { transform: translateY(150px) rotate(8deg); opacity: 0.4; }
+          100% { transform: translateY(300px) rotate(-10deg); opacity: 0; }
+        }
+        
+        .zombie-attack-drag {
+          animation: dragDown 1.5s ease-in forwards;
+        }
+        
+        .zombie-overlay-drag {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.3) 50%, rgba(20,10,5,0.8) 100%);
+          animation: fadeIn 0.5s ease-out forwards;
+          pointer-events: none;
+        }
+        
+        /* ===== ATTACK TYPE 5: SPLATTER ===== */
+        @keyframes splatterExplode {
+          0% { transform: scale(1); filter: none; opacity: 1; }
+          10% { transform: scale(1.5); filter: blur(0); }
+          20% { transform: scale(0.8); filter: blur(2px); }
+          40% { transform: scale(1.2); filter: blur(5px); opacity: 0.8; }
+          60% { transform: scale(0.6); filter: blur(10px); opacity: 0.5; }
+          100% { transform: scale(0.2); filter: blur(20px); opacity: 0; }
+        }
+        
+        .zombie-attack-splatter {
+          animation: splatterExplode 1s ease-out forwards;
+        }
+        
+        .zombie-overlay-splatter {
+          position: absolute;
+          inset: -20%;
+          background: radial-gradient(circle at 30% 40%, rgba(139,0,0,0.8) 0%, transparent 30%),
+                      radial-gradient(circle at 70% 30%, rgba(139,0,0,0.7) 0%, transparent 25%),
+                      radial-gradient(circle at 50% 60%, rgba(139,0,0,0.9) 0%, transparent 35%),
+                      radial-gradient(circle at 20% 70%, rgba(139,0,0,0.6) 0%, transparent 20%),
+                      radial-gradient(circle at 80% 70%, rgba(139,0,0,0.7) 0%, transparent 28%);
+          animation: fadeIn 0.2s ease-out forwards;
+          pointer-events: none;
+        }
+        
+        @keyframes fadeIn {
+          0% { opacity: 0; }
+          100% { opacity: 1; }
         }
       `}</style>
     </>
