@@ -1,9 +1,10 @@
 /**
  * Export Functionality Tests
- * Tests for PDF export and filename generation
+ * Tests for PDF export, filename generation, and title handling
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { useKitesStore } from "@/lib/store";
 
 // Test the filename sanitization logic used in export
 describe("Export: Filename Sanitization", () => {
@@ -270,5 +271,107 @@ describe("Export: Text Color Logic", () => {
   it("should prioritize style color over theme colors", () => {
     const result = getTextColor("#custom", false, "#heading", "#text");
     expect(result).toBe("#custom");
+  });
+});
+
+describe("Export: Title Integration", () => {
+  beforeEach(() => {
+    useKitesStore.setState({
+      kites: [],
+      currentKiteIndex: 0,
+      selectedBlockId: null,
+      currentTheme: "sky",
+      title: "Untitled Presentation",
+      _isLoaded: true,
+    });
+  });
+
+  // Helper function that mirrors the sanitization logic in EditorLayout
+  const sanitizeFilename = (title: string): string => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "presentation";
+  };
+
+  it("should generate correct filename from store title", () => {
+    useKitesStore.getState().setTitle("My Zombie Presentation");
+    const title = useKitesStore.getState().title;
+    
+    expect(sanitizeFilename(title)).toBe("my-zombie-presentation");
+  });
+
+  it("should handle store title with special characters", () => {
+    useKitesStore.getState().setTitle("Q&A Session: Part 1!");
+    const title = useKitesStore.getState().title;
+    
+    expect(sanitizeFilename(title)).toBe("q-a-session-part-1");
+  });
+
+  it("should use 'presentation' for empty store title", () => {
+    useKitesStore.getState().setTitle("");
+    const title = useKitesStore.getState().title;
+    
+    expect(sanitizeFilename(title)).toBe("presentation");
+  });
+
+  it("should persist title changes", () => {
+    const testTitle = "Test Presentation Title";
+    useKitesStore.getState().setTitle(testTitle);
+    
+    expect(useKitesStore.getState().title).toBe(testTitle);
+  });
+});
+
+describe("Export: PDF Dimensions", () => {
+  const PDF_WIDTH = 1920;
+  const PDF_HEIGHT = 1080;
+  const ASPECT_RATIO = PDF_WIDTH / PDF_HEIGHT;
+
+  it("should use 1920x1080 dimensions (16:9)", () => {
+    expect(PDF_WIDTH).toBe(1920);
+    expect(PDF_HEIGHT).toBe(1080);
+  });
+
+  it("should have correct aspect ratio", () => {
+    expect(ASPECT_RATIO).toBeCloseTo(16 / 9, 4);
+  });
+
+  it("should maintain aspect ratio for different scales", () => {
+    const scale2Width = PDF_WIDTH * 2;
+    const scale2Height = PDF_HEIGHT * 2;
+    
+    expect(scale2Width / scale2Height).toBeCloseTo(ASPECT_RATIO, 4);
+  });
+});
+
+describe("Export: Block Type Handling", () => {
+  const isHeading = (type: string): boolean => {
+    return ["h1", "h2", "h3", "h4"].includes(type);
+  };
+
+  const isTextBlock = (type: string): boolean => {
+    return isHeading(type) || type === "text";
+  };
+
+  it("should identify h1-h4 as headings", () => {
+    expect(isHeading("h1")).toBe(true);
+    expect(isHeading("h2")).toBe(true);
+    expect(isHeading("h3")).toBe(true);
+    expect(isHeading("h4")).toBe(true);
+  });
+
+  it("should not identify text or image as heading", () => {
+    expect(isHeading("text")).toBe(false);
+    expect(isHeading("image")).toBe(false);
+  });
+
+  it("should identify text blocks correctly", () => {
+    expect(isTextBlock("h1")).toBe(true);
+    expect(isTextBlock("h2")).toBe(true);
+    expect(isTextBlock("h3")).toBe(true);
+    expect(isTextBlock("h4")).toBe(true);
+    expect(isTextBlock("text")).toBe(true);
+    expect(isTextBlock("image")).toBe(false);
   });
 });
