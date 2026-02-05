@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { EditorLayout } from "@/components/Editor";
 import { DeckContainer } from "@/components/Deck";
 import { useKitesStore, useKites, useCurrentKiteIndex } from "@/lib/store";
@@ -32,10 +31,6 @@ function checkAndClearStorage() {
 function PresentationView({ onExit }: { onExit: () => void }) {
   const kites = useKites();
   const currentKiteIndex = useCurrentKiteIndex();
-  const { goToNextKite, goToPreviousKite } = useKitesStore();
-
-  const canGoPrev = currentKiteIndex > 0;
-  const canGoNext = currentKiteIndex < kites.length - 1;
 
   return (
     <div className="relative bg-white">
@@ -47,40 +42,11 @@ function PresentationView({ onExit }: { onExit: () => void }) {
         Exit (Esc)
       </button>
 
-      {/* Navigation arrows */}
+      {/* Slide counter - arrows hidden, use keyboard to navigate */}
       {kites.length > 1 && (
-        <>
-          {/* Previous button */}
-          <button
-            onClick={goToPreviousKite}
-            disabled={!canGoPrev}
-            className={`fixed left-4 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full backdrop-blur-sm transition-all ${
-              canGoPrev 
-                ? "bg-slate-900/50 text-white hover:bg-slate-900/70 cursor-pointer" 
-                : "bg-slate-900/20 text-white/30 cursor-not-allowed"
-            }`}
-          >
-            <ChevronLeft size={32} />
-          </button>
-
-          {/* Next button */}
-          <button
-            onClick={goToNextKite}
-            disabled={!canGoNext}
-            className={`fixed right-4 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full backdrop-blur-sm transition-all ${
-              canGoNext 
-                ? "bg-slate-900/50 text-white hover:bg-slate-900/70 cursor-pointer" 
-                : "bg-slate-900/20 text-white/30 cursor-not-allowed"
-            }`}
-          >
-            <ChevronRight size={32} />
-          </button>
-
-          {/* Slide counter */}
-          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-slate-900/50 text-white backdrop-blur-sm text-sm font-medium">
-            {currentKiteIndex + 1} / {kites.length}
-          </div>
-        </>
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-slate-900/50 text-white backdrop-blur-sm text-sm font-medium">
+          {currentKiteIndex + 1} / {kites.length}
+        </div>
       )}
 
       <DeckContainer onExit={onExit} />

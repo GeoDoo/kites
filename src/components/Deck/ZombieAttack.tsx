@@ -224,14 +224,14 @@ export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset
 
   return (
     <>
-      {/* Timer display - dramatic survival counter */}
-      <div className="absolute top-6 left-6 z-50 pointer-events-none">
+      {/* Timer display - compact survival counter */}
+      <div className="absolute top-4 left-4 z-50 pointer-events-none">
         <div 
           className={`
-            px-6 py-3 rounded-xl backdrop-blur-md border-2
+            px-3 py-1.5 rounded-lg backdrop-blur-md border
             font-bold transition-all duration-300
             ${isAttacking 
-              ? "bg-red-900/90 text-red-100 border-red-600 animate-pulse scale-110" 
+              ? "bg-red-900/90 text-red-100 border-red-600 animate-pulse" 
               : timeLeft <= 3 
                 ? "bg-red-900/80 text-yellow-300 border-red-500 animate-pulse"
                 : "bg-black/70 text-green-400 border-green-800"
@@ -240,8 +240,8 @@ export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset
           style={{ fontFamily: "'Creepster', cursive" }}
         >
           {isAttacking ? (
-            <span className="flex items-center gap-3 text-4xl">
-              <span className="text-5xl">
+            <span className="flex items-center gap-2 text-lg">
+              <span className="text-xl">
                 {attackType === "scratch" && "🩸"}
                 {attackType === "infection" && "🦠"}
                 {attackType === "devour" && "🦷"}
@@ -252,15 +252,15 @@ export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset
                 {attackType === "scratch" && "CLAWED!"}
                 {attackType === "infection" && "INFECTED!"}
                 {attackType === "devour" && "DEVOURED!"}
-                {attackType === "drag" && "DRAGGED UNDER!"}
+                {attackType === "drag" && "DRAGGED!"}
                 {attackType === "splatter" && "OBLITERATED!"}
               </span>
             </span>
           ) : (
-            <span className="flex items-center gap-3">
-              <span className="text-3xl">{timeLeft <= 3 ? "☠️" : "⏱️"}</span>
-              <span className="text-3xl">
-                {timeLeft <= 3 ? `THEY'RE EVERYWHERE! ${timeLeft}s` : `Survive: ${timeLeft}s`}
+            <span className="flex items-center gap-2 text-base">
+              <span>{timeLeft <= 3 ? "☠️" : "⏱️"}</span>
+              <span>
+                {timeLeft <= 3 ? `RUN! ${timeLeft}s` : `${timeLeft}s`}
               </span>
             </span>
           )}
@@ -424,13 +424,22 @@ export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset
         
         .zombie-overlay-devour {
           position: absolute;
-          inset: 0;
-          background: repeating-conic-gradient(from 0deg, transparent 0deg 10deg, rgba(139,0,0,0.3) 10deg 20deg);
-          animation: fadeIn 0.3s ease-out forwards, spin 2s linear;
+          inset: -10%;
+          background: 
+            radial-gradient(ellipse 30% 40% at 20% 30%, rgba(139,0,0,0.7) 0%, transparent 70%),
+            radial-gradient(ellipse 25% 35% at 75% 25%, rgba(100,0,0,0.6) 0%, transparent 70%),
+            radial-gradient(ellipse 35% 30% at 50% 70%, rgba(139,0,0,0.8) 0%, transparent 70%),
+            radial-gradient(ellipse 20% 25% at 85% 65%, rgba(120,0,0,0.5) 0%, transparent 70%),
+            radial-gradient(ellipse 28% 32% at 15% 75%, rgba(139,0,0,0.6) 0%, transparent 70%);
+          animation: bloodDrip 2s ease-out forwards;
           pointer-events: none;
         }
         
-        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes bloodDrip {
+          0% { opacity: 0; transform: translateY(-20px); }
+          30% { opacity: 1; transform: translateY(0); }
+          100% { opacity: 0.8; transform: translateY(10px); }
+        }
         
         /* ===== ATTACK TYPE 4: DRAG ===== */
         @keyframes dragDown {
