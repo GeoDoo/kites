@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useCallback, useEffect } from "react";
 import { type Kite, type ContentBlock } from "@/lib/types";
 import { type KiteTheme, getBackgroundForKite } from "@/lib/themes";
 import { cn } from "@/lib/utils";
+import { ZombieAttack } from "./ZombieAttack";
 
 interface KiteViewProps {
   kite: Kite;
@@ -17,6 +19,24 @@ interface KiteViewProps {
  */
 export function KiteView({ kite, index, isActive = false, theme }: KiteViewProps) {
   const backgroundImage = getBackgroundForKite(theme, index);
+  const [isAttacked, setIsAttacked] = useState(false);
+  
+  // Reset attack state when slide becomes active (e.g., navigating back to it)
+  useEffect(() => {
+    if (isActive) {
+      setIsAttacked(false);
+    }
+  }, [isActive]);
+
+  // Handle zombie attack
+  const handleZombieAttack = useCallback(() => {
+    setIsAttacked(true);
+  }, []);
+
+  // Reset attack state when moving to next slide
+  const handleZombieReset = useCallback(() => {
+    setIsAttacked(false);
+  }, []);
   
   return (
     <section
@@ -74,6 +94,16 @@ export function KiteView({ kite, index, isActive = false, theme }: KiteViewProps
         />
       )}
 
+      {/* Zombie Attack Effect - only for zombie theme */}
+      {theme.effects?.zombieAttack?.enabled && (
+        <ZombieAttack
+          config={theme.effects.zombieAttack}
+          isActive={isActive}
+          onAttack={handleZombieAttack}
+          onReset={handleZombieReset}
+        />
+      )}
+
       {/* Kite number indicator */}
       <span 
         className="absolute bottom-4 right-4 text-sm font-mono opacity-50"
@@ -84,7 +114,12 @@ export function KiteView({ kite, index, isActive = false, theme }: KiteViewProps
 
       {/* Render all content blocks */}
       {kite.contentBlocks.map((block) => (
-        <PresentationBlock key={block.id} block={block} theme={theme} />
+        <PresentationBlock 
+          key={block.id} 
+          block={block} 
+          theme={theme} 
+          isAttacked={isAttacked && theme.effects?.zombieAttack?.enabled}
+        />
       ))}
     </section>
   );
@@ -94,10 +129,19 @@ export function KiteView({ kite, index, isActive = false, theme }: KiteViewProps
  * Presentation Block
  * Renders a content block in presentation mode (read-only)
  */
-function PresentationBlock({ block, theme }: { block: ContentBlock; theme: KiteTheme }) {
+function PresentationBlock({ 
+  block, 
+  theme, 
+  isAttacked = false 
+}: { 
+  block: ContentBlock; 
+  theme: KiteTheme;
+  isAttacked?: boolean;
+}) {
   const { type, position, content, style } = block;
 
   const isHeading = type === "h1" || type === "h2" || type === "h3" || type === "h4";
+  const isTextBlock = isHeading || type === "text";
 
   // Default font sizes for each type (in case style is missing)
   const defaultFontSizes: Record<string, number> = {
@@ -134,7 +178,8 @@ function PresentationBlock({ block, theme }: { block: ContentBlock; theme: KiteT
               style?.textAlign === "right" && "text-right",
               isHeading && "font-bold",
               "[&_blockquote]:border-l-4 [&_blockquote]:border-current [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:opacity-80",
-              "[&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6"
+              "[&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6",
+              isAttacked && "zombie-text-attacked"
             )}
             style={baseStyle}
             dangerouslySetInnerHTML={{ __html: content }}
@@ -172,7 +217,10 @@ function PresentationBlock({ block, theme }: { block: ContentBlock; theme: KiteT
 
   return (
     <div
-      className="absolute"
+      className={cn(
+        "absolute",
+        isAttacked && isTextBlock && "relative"
+      )}
       style={{
         left: `${position.x}%`,
         top: `${position.y}%`,
@@ -182,6 +230,11 @@ function PresentationBlock({ block, theme }: { block: ContentBlock; theme: KiteT
       }}
     >
       {renderContent()}
+      
+      {/* Scratch marks overlay when attacked */}
+      {isAttacked && isTextBlock && (
+        <div className="zombie-scratch-overlay" />
+      )}
     </div>
   );
 }

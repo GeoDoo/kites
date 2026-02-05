@@ -3,6 +3,11 @@
  * Game-inspired presets that apply globally to all kites
  */
 
+export interface ZombieAttackConfig {
+  enabled: boolean;
+  timerSeconds: number;  // Time per slide - zombie syncs to reach text exactly when timer hits 0
+}
+
 export interface KiteTheme {
   id: string;
   name: string;
@@ -23,6 +28,7 @@ export interface KiteTheme {
     glow?: boolean;
     scanlines?: boolean;
     noise?: boolean;
+    zombieAttack?: ZombieAttackConfig;
   };
 }
 
@@ -158,6 +164,10 @@ export const themes: Record<string, KiteTheme> = {
     style: "sharp",
     effects: {
       noise: true,
+      zombieAttack: {
+        enabled: true,
+        timerSeconds: 10,  // 10 seconds per slide - zombie arrives exactly when timer hits 0
+      },
     },
   },
 };
