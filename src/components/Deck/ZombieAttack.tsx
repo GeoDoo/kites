@@ -5,6 +5,7 @@ import type { ZombieAttackConfig } from "@/lib/themes";
 
 interface ZombieAttackProps {
   config: ZombieAttackConfig;
+  timerSeconds: number;  // Calculated time per kite (totalTalkTime / numKites)
   isActive: boolean;
   onAttack: () => void;
   onReset: () => void;
@@ -105,8 +106,8 @@ function generateHorde(count: number): HordeZombie[] {
  * Displays a horde of zombies attacking from ALL directions with countdown timer
  * When timer hits 0, triggers the attack effect on text
  */
-export function ZombieAttack({ config, isActive, onAttack, onReset }: ZombieAttackProps) {
-  const [timeLeft, setTimeLeft] = useState(config.timerSeconds);
+export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset }: ZombieAttackProps) {
+  const [timeLeft, setTimeLeft] = useState(timerSeconds);
   const [isAttacking, setIsAttacking] = useState(false);
   const [hordeKey, setHordeKey] = useState(0);
   
@@ -117,16 +118,16 @@ export function ZombieAttack({ config, isActive, onAttack, onReset }: ZombieAtta
   const [hordePositions, setHordePositions] = useState<{ x: number; y: number }[]>([]);
 
   // Calculate base speed - zombies need to travel their distance in timerSeconds
-  const totalUpdates = config.timerSeconds * 10;
+  const totalUpdates = timerSeconds * 10;
 
   // Reset state when slide becomes active
   useEffect(() => {
     if (isActive) {
-      setTimeLeft(config.timerSeconds);
+      setTimeLeft(timerSeconds);
       setIsAttacking(false);
       setHordeKey(prev => prev + 1);
     }
-  }, [isActive, config.timerSeconds]);
+  }, [isActive, timerSeconds]);
 
   // Initialize positions after horde is generated
   useEffect(() => {

@@ -11,15 +11,21 @@ interface KiteViewProps {
   index: number;
   isActive?: boolean;
   theme: KiteTheme;
+  totalKites: number;  // Total number of kites for timer calculation
 }
 
 /**
  * KiteView Component
  * Renders a single kite in presentation mode (full-screen with scroll-snap)
  */
-export function KiteView({ kite, index, isActive = false, theme }: KiteViewProps) {
+export function KiteView({ kite, index, isActive = false, theme, totalKites }: KiteViewProps) {
   const backgroundImage = getBackgroundForKite(theme, index);
   const [isAttacked, setIsAttacked] = useState(false);
+  
+  // Calculate timer per kite: total talk time / number of kites
+  const timerSeconds = theme.effects?.zombieAttack?.totalTalkMinutes
+    ? Math.floor((theme.effects.zombieAttack.totalTalkMinutes * 60) / totalKites)
+    : 60; // Default 60 seconds if not configured
   
   // Reset attack state when slide becomes active (e.g., navigating back to it)
   useEffect(() => {
@@ -98,6 +104,7 @@ export function KiteView({ kite, index, isActive = false, theme }: KiteViewProps
       {theme.effects?.zombieAttack?.enabled && (
         <ZombieAttack
           config={theme.effects.zombieAttack}
+          timerSeconds={timerSeconds}
           isActive={isActive}
           onAttack={handleZombieAttack}
           onReset={handleZombieReset}

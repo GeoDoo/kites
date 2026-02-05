@@ -139,6 +139,7 @@ export function DeckContainer({ className, onExit }: DeckContainerProps) {
           index={index}
           isActive={index === currentKiteIndex}
           theme={theme}
+          totalKites={kites.length}
         />
       ))}
     </div>
