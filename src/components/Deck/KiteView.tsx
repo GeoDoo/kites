@@ -63,6 +63,9 @@ export function KiteView({ kite, index, isActive = false, theme, totalKites }: K
       style={{
         backgroundColor: theme.colors.background,
         fontFamily: theme.font ? `"${theme.font}", sans-serif` : undefined,
+        // GPU acceleration hints for smoother scrolling
+        willChange: "transform",
+        transform: "translateZ(0)",
       }}
     >
       {/* Theme background image with treatment */}

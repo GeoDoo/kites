@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useKitesStore, useKites, useCurrentKiteIndex, useCurrentTheme } from "@/lib/store";
 import { KiteView } from "./KiteView";
 import { getTheme } from "@/lib/themes";
@@ -17,6 +17,10 @@ interface DeckContainerProps {
  */
 export function DeckContainer({ className, onExit }: DeckContainerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const isInitialMount = useRef(true);
+  const isScrolling = useRef(false);
+  const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [isReady, setIsReady] = useState(false);
   const kites = useKites();
   const currentKiteIndex = useCurrentKiteIndex();
   const setCurrentKite = useKitesStore((state) => state.setCurrentKite);
@@ -40,61 +44,112 @@ export function DeckContainer({ className, onExit }: DeckContainerProps) {
   }, [kites.length, currentKiteIndex, setCurrentKite]);
 
   /**
-   * Scroll to kite when currentKiteIndex changes programmatically
+   * Initial scroll to current kite (instant, no animation)
    */
   useEffect(() => {
     const container = containerRef.current;
     if (!container || kites.length === 0) return;
 
-    const targetScrollTop = currentKiteIndex * container.clientHeight;
-    const currentScrollTop = container.scrollTop;
-
-    if (Math.abs(targetScrollTop - currentScrollTop) > 10) {
+    // On initial mount, scroll instantly to the current kite
+    if (isInitialMount.current) {
+      const targetScrollTop = currentKiteIndex * container.clientHeight;
       container.scrollTo({
         top: targetScrollTop,
-        behavior: "smooth",
+        behavior: "instant",
+      });
+      isInitialMount.current = false;
+      // Small delay to prevent flash of wrong slide
+      requestAnimationFrame(() => {
+        setIsReady(true);
       });
     }
   }, [currentKiteIndex, kites.length]);
 
   /**
-   * Handle keyboard navigation
+   * Scroll to kite when currentKiteIndex changes programmatically (after initial mount)
+   * Uses instant scroll to prevent flutter - CSS snap handles the visual smoothness
+   */
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || kites.length === 0 || isInitialMount.current) return;
+
+    const targetScrollTop = currentKiteIndex * container.clientHeight;
+    const currentScrollTop = container.scrollTop;
+
+    if (Math.abs(targetScrollTop - currentScrollTop) > 10) {
+      // Use instant scroll - CSS scroll-snap provides visual smoothness
+      container.scrollTo({
+        top: targetScrollTop,
+        behavior: "instant",
+      });
+    }
+  }, [currentKiteIndex, kites.length]);
+
+  /**
+   * Handle keyboard navigation with scroll lock to prevent rapid-fire
    */
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const { goToNextKite, goToPreviousKite } = useKitesStore.getState();
 
+      // Handle escape immediately
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onExit?.();
+        return;
+      }
+
+      // Block navigation if currently scrolling (prevents rapid-fire jumpiness)
+      if (isScrolling.current) {
+        e.preventDefault();
+        return;
+      }
+
+      // Navigation keys
       switch (e.key) {
-        case "Escape":
-          e.preventDefault();
-          onExit?.();
-          break;
         case "ArrowDown":
         case "ArrowRight":
         case " ":
         case "PageDown":
           e.preventDefault();
+          isScrolling.current = true;
           goToNextKite();
           break;
         case "ArrowUp":
         case "ArrowLeft":
         case "PageUp":
           e.preventDefault();
+          isScrolling.current = true;
           goToPreviousKite();
           break;
         case "Home":
           e.preventDefault();
+          isScrolling.current = true;
           setCurrentKite(0);
           break;
         case "End":
           e.preventDefault();
+          isScrolling.current = true;
           setCurrentKite(kites.length - 1);
           break;
       }
+
+      // Clear scroll lock after a short delay (prevents rapid-fire)
+      if (scrollTimeout.current) {
+        clearTimeout(scrollTimeout.current);
+      }
+      scrollTimeout.current = setTimeout(() => {
+        isScrolling.current = false;
+      }, 150); // Short delay to prevent rapid-fire without feeling sluggish
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      if (scrollTimeout.current) {
+        clearTimeout(scrollTimeout.current);
+      }
+    };
   }, [kites.length, setCurrentKite, onExit]);
 
   if (kites.length === 0) {
@@ -123,7 +178,9 @@ export function DeckContainer({ className, onExit }: DeckContainerProps) {
       className={cn(
         "h-screen w-full overflow-y-scroll",
         "snap-y snap-mandatory",
-        "scroll-smooth",
+        // Hide until we've scrolled to the correct position
+        !isReady && "opacity-0",
+        isReady && "opacity-100 transition-opacity duration-150",
         className
       )}
       style={{
