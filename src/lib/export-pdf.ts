@@ -49,7 +49,6 @@ export async function exportToPDF(
     for (let i = 0; i < kites.length; i++) {
       const kite = kites[i];
       
-      console.log(`Exporting kite ${i + 1}/${kites.length}...`);
       onProgress?.(i + 1, kites.length);
       
       // Small delay to allow React to re-render progress
@@ -98,7 +97,6 @@ export async function exportToPDF(
       pdf.addImage(imgData, "JPEG", 0, 0, 1920, 1080);
     }
 
-    console.log("PDF export complete, saving...");
     // Save the PDF
     pdf.save(filename);
   } finally {
