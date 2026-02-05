@@ -38,10 +38,14 @@ describe("Theme Definitions", () => {
 
   it("should have valid hex color codes", () => {
     const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+    // headingShadow is a CSS shadow value, not a hex color
+    const nonHexColors = ["headingShadow"];
     
     Object.values(themes).forEach((theme) => {
       Object.entries(theme.colors).forEach(([colorName, colorValue]) => {
-        expect(colorValue, `${theme.id}.colors.${colorName}`).toMatch(hexRegex);
+        if (!nonHexColors.includes(colorName)) {
+          expect(colorValue, `${theme.id}.colors.${colorName}`).toMatch(hexRegex);
+        }
       });
     });
   });

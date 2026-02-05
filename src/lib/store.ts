@@ -13,9 +13,9 @@ let saveTimeout: NodeJS.Timeout | null = null;
 const SAVE_DELAY = 300; // ms - save quickly after changes
 
 // Force immediate save (used before page unload)
-let pendingSaveData: { kites: any[]; currentKiteIndex: number; currentTheme: string } | null = null;
+let pendingSaveData: { kites: any[]; currentKiteIndex: number; currentTheme: string; title: string } | null = null;
 
-async function saveToAPI(data: { kites: Kite[]; currentKiteIndex: number; currentTheme: string }) {
+async function saveToAPI(data: { kites: Kite[]; currentKiteIndex: number; currentTheme: string; title: string }) {
   try {
     // Debug: Log the actual content being saved
     data.kites.forEach((kite, i) => {
@@ -42,7 +42,7 @@ async function saveToAPI(data: { kites: Kite[]; currentKiteIndex: number; curren
   }
 }
 
-function debouncedSave(data: { kites: Kite[]; currentKiteIndex: number; currentTheme: string }) {
+function debouncedSave(data: { kites: Kite[]; currentKiteIndex: number; currentTheme: string; title: string }) {
   pendingSaveData = data; // Track pending save
   if (saveTimeout) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
@@ -150,10 +150,14 @@ interface KitesState {
   currentKiteIndex: number;
   selectedBlockId: string | null;
   currentTheme: string;
+  title: string;
   _isLoaded: boolean;
 
   // Data Loading
   loadFromAPI: () => Promise<void>;
+
+  // Title
+  setTitle: (title: string) => void;
 
   // Theme
   setTheme: (themeId: string) => void;
@@ -205,6 +209,7 @@ export const useKitesStore = create<KitesState>()(
         currentKiteIndex: 0,
         selectedBlockId: null,
         currentTheme: "sky",
+        title: "Untitled Presentation",
         _isLoaded: false,
 
         // Load from API
@@ -228,6 +233,7 @@ export const useKitesStore = create<KitesState>()(
               state.kites = data.kites || [];
               state.currentKiteIndex = data.currentKiteIndex || 0;
               state.currentTheme = data.currentTheme || "sky";
+              state.title = data.title || "Untitled Presentation";
               state._isLoaded = true;
             });
             
@@ -236,6 +242,11 @@ export const useKitesStore = create<KitesState>()(
             console.error("Failed to load from API:", error);
             set({ _isLoaded: true }); // Still mark as loaded so app can function
           }
+        },
+
+        // Title setter
+        setTitle: (title) => {
+          set({ title });
         },
 
         // Theme setter
@@ -533,6 +544,7 @@ useKitesStore.subscribe(
     kites: state.kites, 
     currentKiteIndex: state.currentKiteIndex, 
     currentTheme: state.currentTheme,
+    title: state.title,
     _isLoaded: state._isLoaded 
   }),
   (current, previous) => {
@@ -546,13 +558,15 @@ useKitesStore.subscribe(
     const kitesChanged = current.kites !== previous.kites;
     const indexChanged = current.currentKiteIndex !== previous.currentKiteIndex;
     const themeChanged = current.currentTheme !== previous.currentTheme;
+    const titleChanged = current.title !== previous.title;
     
-    if (kitesChanged || indexChanged || themeChanged) {
-      console.log("📝 State changed, scheduling save...", { kitesChanged, indexChanged, themeChanged });
+    if (kitesChanged || indexChanged || themeChanged || titleChanged) {
+      console.log("📝 State changed, scheduling save...", { kitesChanged, indexChanged, themeChanged, titleChanged });
       debouncedSave({
         kites: current.kites,
         currentKiteIndex: current.currentKiteIndex,
         currentTheme: current.currentTheme,
+        title: current.title,
       });
     }
   }
@@ -588,3 +602,6 @@ export const useSelectedBlock = () => {
 
 export const useCurrentTheme = () =>
   useKitesStore((state) => state.currentTheme);
+
+export const useTitle = () =>
+  useKitesStore((state) => state.title);

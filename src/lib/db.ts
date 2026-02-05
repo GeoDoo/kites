@@ -114,6 +114,7 @@ export interface AppState {
   kites: Array<{ id: string; [key: string]: unknown }>;
   currentKiteIndex: number;
   currentTheme: string;
+  title: string;
 }
 
 export function loadAppState(): AppState {
@@ -122,6 +123,7 @@ export function loadAppState(): AppState {
   // Load settings
   const currentKiteIndex = parseInt(getSetting("currentKiteIndex", "0"), 10);
   const currentTheme = getSetting("currentTheme", "sky");
+  const title = getSetting("title", "Untitled Presentation");
   
   // Load kites
   const kiteRecords = getAllKites();
@@ -131,6 +133,7 @@ export function loadAppState(): AppState {
     kites,
     currentKiteIndex,
     currentTheme,
+    title,
   };
 }
 
@@ -142,6 +145,7 @@ export function saveAppState(state: AppState): void {
     // Save settings
     setSetting("currentKiteIndex", state.currentKiteIndex.toString());
     setSetting("currentTheme", state.currentTheme);
+    setSetting("title", state.title || "Untitled Presentation");
     
     // Get existing kite IDs
     const existingIds = new Set(

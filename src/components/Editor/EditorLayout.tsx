@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useKitesStore, useKites, useIsLoaded, useCurrentTheme } from "@/lib/store";
+import { useKitesStore, useKites, useIsLoaded, useCurrentTheme, useTitle } from "@/lib/store";
 import { KiteList } from "./KiteList";
 import { KiteCanvas } from "./KiteCanvas";
 import { ElementToolbar } from "./ElementToolbar";
@@ -24,9 +24,14 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
   const loadFromAPI = useKitesStore((state) => state.loadFromAPI);
   const initializeIfEmpty = useKitesStore((state) => state.initializeIfEmpty);
   const themeId = useCurrentTheme();
+  const title = useTitle();
+  const setTitle = useKitesStore((state) => state.setTitle);
   const [isDark, setIsDark] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState({ current: 0, total: 0 });
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(title);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const hasLoadedRef = useRef(false);
 
   // Load data from database on mount (only once)
@@ -44,6 +49,40 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
     }
   }, [isLoaded, kites.length, initializeIfEmpty]);
 
+  // Sync edited title when title changes from store
+  useEffect(() => {
+    setEditedTitle(title);
+  }, [title]);
+
+  // Focus input when editing starts
+  useEffect(() => {
+    if (isEditingTitle && titleInputRef.current) {
+      titleInputRef.current.focus();
+      titleInputRef.current.select();
+    }
+  }, [isEditingTitle]);
+
+  // Handle title edit
+  const handleTitleClick = () => {
+    setIsEditingTitle(true);
+  };
+
+  const handleTitleBlur = () => {
+    setIsEditingTitle(false);
+    const newTitle = editedTitle.trim() || "Untitled Presentation";
+    setTitle(newTitle);
+    setEditedTitle(newTitle);
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleTitleBlur();
+    } else if (e.key === "Escape") {
+      setEditedTitle(title);
+      setIsEditingTitle(false);
+    }
+  };
+
   // Toggle dark mode
   const toggleDarkMode = () => {
     setIsDark(!isDark);
@@ -57,8 +96,14 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
     setIsExporting(true);
     setExportProgress({ current: 0, total: kites.length });
     try {
+      // Create filename from title (sanitize for file system)
+      const sanitizedTitle = title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "") || "presentation";
+      
       await exportToPDF(kites, themeId, {
-        filename: "kites-presentation.pdf",
+        filename: `${sanitizedTitle}.pdf`,
         onProgress: (current, total) => {
           setExportProgress({ current, total });
         },
@@ -92,10 +137,35 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Wind className="text-sky-500" size={24} />
-            <h1 className="text-xl font-bold bg-gradient-to-r from-sky-600 to-sky-400 bg-clip-text text-transparent">
-              Kites
-            </h1>
+            <span className="text-sky-400 text-lg font-medium">Kites</span>
+            <span className="text-slate-300">/</span>
           </div>
+          {isEditingTitle ? (
+            <input
+              ref={titleInputRef}
+              type="text"
+              value={editedTitle}
+              onChange={(e) => setEditedTitle(e.target.value)}
+              onBlur={handleTitleBlur}
+              onKeyDown={handleTitleKeyDown}
+              className={cn(
+                "text-xl font-bold bg-transparent border-b-2 border-sky-400 outline-none",
+                "text-slate-700 min-w-[200px]"
+              )}
+            />
+          ) : (
+            <h1 
+              onClick={handleTitleClick}
+              className={cn(
+                "text-xl font-bold text-slate-700 cursor-pointer",
+                "hover:text-sky-600 transition-colors",
+                "border-b-2 border-transparent hover:border-sky-200"
+              )}
+              title="Click to edit title"
+            >
+              {title}
+            </h1>
+          )}
         </div>
 
         <div className="flex items-center gap-2">

@@ -21,6 +21,7 @@ beforeEach(() => {
     currentKiteIndex: 0,
     selectedBlockId: null,
     currentTheme: "sky",
+    title: "Untitled Presentation",
     _isLoaded: true,
   });
 });
@@ -548,6 +549,45 @@ describe("Store: Theme", () => {
     // After reset
     useKitesStore.setState({ currentTheme: "sky" });
     expect(useKitesStore.getState().currentTheme).toBe("sky");
+  });
+});
+
+describe("Store: Title", () => {
+  it("should set title", () => {
+    useKitesStore.getState().setTitle("My Awesome Presentation");
+    
+    expect(useKitesStore.getState().title).toBe("My Awesome Presentation");
+  });
+
+  it("should default to 'Untitled Presentation'", () => {
+    expect(useKitesStore.getState().title).toBe("Untitled Presentation");
+  });
+
+  it("should handle empty title", () => {
+    useKitesStore.getState().setTitle("");
+    
+    expect(useKitesStore.getState().title).toBe("");
+  });
+
+  it("should handle title with special characters", () => {
+    const specialTitle = "My Presentation: Part 1 — The Beginning!";
+    useKitesStore.getState().setTitle(specialTitle);
+    
+    expect(useKitesStore.getState().title).toBe(specialTitle);
+  });
+
+  it("should handle unicode in title", () => {
+    const unicodeTitle = "🧟 Zombie Apocalypse 🧟‍♂️";
+    useKitesStore.getState().setTitle(unicodeTitle);
+    
+    expect(useKitesStore.getState().title).toBe(unicodeTitle);
+  });
+
+  it("should handle long titles", () => {
+    const longTitle = "A".repeat(500);
+    useKitesStore.getState().setTitle(longTitle);
+    
+    expect(useKitesStore.getState().title).toBe(longTitle);
   });
 });
 

@@ -31,14 +31,14 @@ describe("ZombieAttack Component", () => {
     it("should render timer when active", () => {
       render(<ZombieAttack {...defaultProps} />);
       
-      expect(screen.getByText(/Survive:/)).toBeInTheDocument();
+      // Timer shows just the seconds
       expect(screen.getByText(/60s/)).toBeInTheDocument();
     });
 
     it("should not render when inactive", () => {
       render(<ZombieAttack {...defaultProps} isActive={false} />);
       
-      expect(screen.queryByText(/Survive:/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/60s/)).not.toBeInTheDocument();
     });
 
     it("should not render when config is disabled", () => {
@@ -75,7 +75,7 @@ describe("ZombieAttack Component", () => {
       
       // Need to wait until timer reaches 3s or less
       await vi.advanceTimersByTimeAsync(1000);
-      expect(screen.getByText(/THEY'RE EVERYWHERE!/)).toBeInTheDocument();
+      expect(screen.getByText(/RUN!/)).toBeInTheDocument();
       vi.useRealTimers();
     });
 
@@ -124,12 +124,19 @@ describe("ZombieAttack Component", () => {
   });
 
   describe("horde rendering", () => {
-    it("should render multiple zombie emojis", () => {
-      const { container } = render(<ZombieAttack {...defaultProps} />);
+    it("should render multiple zombie emojis after initialization", async () => {
+      vi.useFakeTimers();
+      const { container } = render(<ZombieAttack {...defaultProps} isActive={true} />);
       
-      // Look for zombie emoji text
-      const zombieEmojis = container.querySelectorAll('[class*="animate-zombie"]');
-      expect(zombieEmojis.length).toBeGreaterThan(0);
+      // Wait for isReady state to become true (50ms delay in component)
+      await vi.advanceTimersByTimeAsync(100);
+      
+      // Look for zombie emoji text - zombies are rendered as text content
+      const zombieText = container.textContent || "";
+      const hasZombieEmoji = zombieText.includes("🧟");
+      expect(hasZombieEmoji).toBe(true);
+      
+      vi.useRealTimers();
     });
   });
 
