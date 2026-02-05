@@ -69,23 +69,6 @@ export const themes: Record<string, KiteTheme> = {
     },
   },
 
-  pixel: {
-    id: "pixel",
-    name: "Pixel Art",
-    description: "8-bit nostalgia",
-    colors: {
-      background: "#2d1b69",
-      surface: "#3d2a79",
-      text: "#ffffff",
-      textMuted: "#b8a9e8",
-      accent: "#ff6b6b",
-      accentText: "#ffffff",
-    },
-    backgroundImage: "/themes/pixel-bg.png",
-    font: "Press Start 2P",
-    style: "pixel",
-  },
-
   neon: {
     id: "neon",
     name: "Neon Cyberpunk",
@@ -123,22 +106,6 @@ export const themes: Record<string, KiteTheme> = {
     effects: {
       noise: true,
     },
-  },
-
-  minimal: {
-    id: "minimal",
-    name: "Minimal Dark",
-    description: "Pure and focused",
-    colors: {
-      background: "#000000",
-      surface: "#0a0a0a",
-      text: "#ffffff",
-      textMuted: "#737373",
-      accent: "#ffffff",
-      accentText: "#000000",
-    },
-    backgroundImage: "/themes/minimal-bg.png",
-    style: "sharp",
   },
 
   zombie: {
