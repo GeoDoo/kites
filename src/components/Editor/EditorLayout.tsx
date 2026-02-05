@@ -7,7 +7,7 @@ import { KiteCanvas } from "./KiteCanvas";
 import { ElementToolbar } from "./ElementToolbar";
 import { ThemeSelector } from "./ThemeSelector";
 import { cn } from "@/lib/utils";
-import { Play, Moon, Sun, Wind, Download, Loader2, ChevronDown, FileText, FileSpreadsheet } from "lucide-react";
+import { Play, Moon, Sun, Wind, Download, Loader2, ChevronDown, FileText, FileSpreadsheet, ExternalLink } from "lucide-react";
 import { exportToPDF } from "@/lib/export-pdf";
 import { exportToPPTX } from "@/lib/export-pptx";
 
@@ -30,7 +30,7 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
   const [isDark, setIsDark] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState({ current: 0, total: 0 });
-  const [exportType, setExportType] = useState<"pdf" | "pptx" | null>(null);
+  const [exportType, setExportType] = useState<"pdf" | "pptx" | "gslides" | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
@@ -165,6 +165,41 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
     }
   };
 
+  // Export to Google Slides (PPTX + open Google Slides)
+  const handleExportGoogleSlides = async () => {
+    if (isExporting || kites.length === 0) return;
+    
+    // Open Google Slides FIRST (must be synchronous with user click to avoid popup blocker)
+    const slidesWindow = window.open("https://docs.google.com/presentation/u/0/?usp=slides_web", "_blank");
+    
+    setIsExporting(true);
+    setExportType("gslides");
+    setExportProgress({ current: 0, total: kites.length });
+    setShowExportMenu(false);
+    
+    try {
+      // Then export as PPTX
+      await exportToPPTX(kites, themeId, title, {
+        onProgress: (current, total) => {
+          setExportProgress({ current, total });
+        },
+      });
+      
+      // Focus the slides window if it was opened
+      if (slidesWindow) {
+        slidesWindow.focus();
+      }
+    } catch (error) {
+      console.error("Export failed:", error);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      alert(`Export failed: ${message}`);
+    } finally {
+      setIsExporting(false);
+      setExportType(null);
+      setExportProgress({ current: 0, total: 0 });
+    }
+  };
+
   // Show loading state until data is loaded
   if (!isLoaded) {
     return (
@@ -254,14 +289,14 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
                   <Download size={16} />
                 )}
                 {isExporting 
-                  ? `${exportType?.toUpperCase()} ${exportProgress.current}/${exportProgress.total}` 
+                  ? `${exportType === "gslides" ? "Slides" : exportType?.toUpperCase()} ${exportProgress.current}/${exportProgress.total}` 
                   : "Export"}
                 {!isExporting && <ChevronDown size={14} />}
               </button>
               
               {/* Dropdown menu */}
               {showExportMenu && !isExporting && (
-                <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-sky-100 z-[200]">
+                <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-sky-100 z-[200] overflow-hidden">
                   <button
                     onClick={handleExportPDF}
                     className={cn(
@@ -289,6 +324,21 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
                     <div>
                       <div className="font-medium">PowerPoint</div>
                       <div className="text-xs text-slate-400">Editable .pptx file</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={handleExportGoogleSlides}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-3",
+                      "hover:bg-sky-50 transition-colors",
+                      "text-left text-sm text-slate-700",
+                      "border-t border-sky-50"
+                    )}
+                  >
+                    <ExternalLink size={18} className="text-green-500" />
+                    <div>
+                      <div className="font-medium">Google Slides</div>
+                      <div className="text-xs text-slate-400">Download & open Slides</div>
                     </div>
                   </button>
                 </div>
