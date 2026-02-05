@@ -169,26 +169,21 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
   const handleExportGoogleSlides = async () => {
     if (isExporting || kites.length === 0) return;
     
-    // Open Google Slides FIRST (must be synchronous with user click to avoid popup blocker)
-    const slidesWindow = window.open("https://docs.google.com/presentation/u/0/?usp=slides_web", "_blank");
-    
     setIsExporting(true);
     setExportType("gslides");
     setExportProgress({ current: 0, total: kites.length });
     setShowExportMenu(false);
     
+    let exportSuccess = false;
+    
     try {
-      // Then export as PPTX
+      // Export as PPTX first
       await exportToPPTX(kites, themeId, title, {
         onProgress: (current, total) => {
           setExportProgress({ current, total });
         },
       });
-      
-      // Focus the slides window if it was opened
-      if (slidesWindow) {
-        slidesWindow.focus();
-      }
+      exportSuccess = true;
     } catch (error) {
       console.error("Export failed:", error);
       const message = error instanceof Error ? error.message : "Unknown error";
@@ -197,6 +192,20 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
       setIsExporting(false);
       setExportType(null);
       setExportProgress({ current: 0, total: 0 });
+    }
+    
+    // Show instructions and open Google Slides after export completes
+    if (exportSuccess) {
+      alert(
+        "✅ PPTX file downloaded!\n\n" +
+        "To import into Google Slides:\n" +
+        "1. Google Slides will open in a new tab\n" +
+        "2. Click 'Blank' to create a new presentation\n" +
+        "3. Go to File → Import slides\n" +
+        "4. Click 'Upload' and select the downloaded file"
+      );
+      
+      window.open("https://docs.google.com/presentation/u/0/?usp=slides_web", "_blank");
     }
   };
 
