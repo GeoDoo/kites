@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
-import { useKitesStore, useKites, useCurrentKiteIndex, useCurrentTheme } from "@/lib/store";
+import { useKitesStore, useKites, useCurrentKiteIndex, useCurrentTheme, useTotalDurationMinutes } from "@/lib/store";
 import { KiteView } from "./KiteView";
-import { getTheme, resolveThemeForKite } from "@/lib/themes";
+import { getTheme, resolveThemeForKite, resolveKiteDurations } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
 interface DeckContainerProps {
@@ -26,7 +26,10 @@ export function DeckContainer({ className, onExit, timerStarted = true }: DeckCo
   const currentKiteIndex = useCurrentKiteIndex();
   const setCurrentKite = useKitesStore((state) => state.setCurrentKite);
   const currentThemeId = useCurrentTheme();
+  const totalDurationMinutes = useTotalDurationMinutes();
   const theme = getTheme(currentThemeId);
+  const isHybrid = currentThemeId === "hybrid";
+  const kiteDurations = resolveKiteDurations(totalDurationMinutes, kites, isHybrid);
 
   /**
    * Handle scroll events to update current kite index
@@ -202,7 +205,7 @@ export function DeckContainer({ className, onExit, timerStarted = true }: DeckCo
               index={index}
               isActive={index === currentKiteIndex}
               theme={kiteTheme}
-              totalKites={kites.length}
+              timerSeconds={kiteDurations[index] ?? 60}
               timerStarted={timerStarted}
             />
           );

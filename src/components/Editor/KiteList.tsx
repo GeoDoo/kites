@@ -2,8 +2,8 @@
 
 import { useRef, useEffect, useCallback, useState } from "react";
 import { createPortal } from "react-dom";
-import { useKitesStore, useKites, useCurrentKiteIndex, useCurrentTheme } from "@/lib/store";
-import { getTheme, getBackgroundForKite, resolveThemeForKite, themeList } from "@/lib/themes";
+import { useKitesStore, useKites, useCurrentKiteIndex, useCurrentTheme, useTotalDurationMinutes } from "@/lib/store";
+import { getTheme, getBackgroundForKite, resolveThemeForKite, resolveKiteDurations, themeList } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2, Copy, ChevronDown } from "lucide-react";
 
@@ -126,17 +126,112 @@ function KiteThemePicker({
 }
 
 /**
+ * Per-kite duration editor — shown on each thumbnail when Hybrid mode is active.
+ * Displays the resolved seconds and lets the user type an override.
+ */
+function KiteDurationEditor({
+  kiteId,
+  resolvedSeconds,
+  override,
+}: {
+  kiteId: string;
+  resolvedSeconds: number;
+  override?: number;
+}) {
+  const { updateKiteDuration } = useKitesStore();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const displaySeconds = override ?? resolvedSeconds;
+  const mins = Math.floor(displaySeconds / 60);
+  const secs = displaySeconds % 60;
+  const display = mins > 0 ? `${mins}:${secs.toString().padStart(2, "0")}` : `${secs}s`;
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const commit = () => {
+    setEditing(false);
+    const trimmed = value.trim();
+    if (trimmed === "" || trimmed === "0") {
+      updateKiteDuration(kiteId, undefined); // clear override
+      return;
+    }
+    // Parse "m:ss" or plain seconds
+    let totalSecs: number;
+    if (trimmed.includes(":")) {
+      const [m, s] = trimmed.split(":");
+      totalSecs = (parseInt(m, 10) || 0) * 60 + (parseInt(s, 10) || 0);
+    } else {
+      totalSecs = parseInt(trimmed, 10) || 0;
+    }
+    if (totalSecs > 0) {
+      updateKiteDuration(kiteId, totalSecs);
+    } else {
+      updateKiteDuration(kiteId, undefined);
+    }
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        type="text"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          if (e.key === "Escape") setEditing(false);
+          e.stopPropagation();
+        }}
+        onClick={(e) => e.stopPropagation()}
+        placeholder="0:30"
+        className="w-[38px] px-0.5 py-0.5 rounded text-[8px] text-center bg-white border border-sky-300 text-slate-700 outline-none"
+      />
+    );
+  }
+
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        setValue(override ? `${Math.floor(override / 60)}:${(override % 60).toString().padStart(2, "0")}` : "");
+        setEditing(true);
+      }}
+      className={cn(
+        "px-1 py-0.5 rounded text-[8px] leading-none",
+        override
+          ? "bg-amber-500/70 text-white"
+          : "bg-slate-800/60 text-white backdrop-blur-sm",
+        "hover:bg-slate-800/80 transition-colors"
+      )}
+      title={override ? `Custom: ${display} (click to edit, clear to reset)` : `Auto: ${display} (click to override)`}
+    >
+      {display}
+    </button>
+  );
+}
+
+/**
  * KiteList Component
  * Sidebar showing all kites as thumbnails
  * Supports arrow key navigation (Up/Down)
- * In Hybrid mode: per-kite theme picker + visually reflects each kite's theme
+ * In Hybrid mode: per-kite theme picker + duration editor, visually reflects each kite's theme
  */
 export function KiteList() {
   const kites = useKites();
   const currentKiteIndex = useCurrentKiteIndex();
   const { setCurrentKite, addKite, deleteKite, duplicateKite } = useKitesStore();
   const currentThemeId = useCurrentTheme();
+  const totalDurationMinutes = useTotalDurationMinutes();
   const isHybrid = currentThemeId === "hybrid";
+  const kiteDurations = resolveKiteDurations(totalDurationMinutes, kites, isHybrid);
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
@@ -237,12 +332,17 @@ export function KiteList() {
                 {index + 1}
               </div>
 
-              {/* Per-kite theme picker (Hybrid mode only) */}
+              {/* Per-kite theme picker + duration (Hybrid mode only) */}
               {isHybrid && (
-                <div className="absolute bottom-1 left-1 z-10">
+                <div className="absolute bottom-1 left-1 right-1 z-10 flex items-end justify-between">
                   <KiteThemePicker
                     kiteId={kite.id}
                     currentOverride={kite.themeOverride}
+                  />
+                  <KiteDurationEditor
+                    kiteId={kite.id}
+                    resolvedSeconds={kiteDurations[index] ?? 0}
+                    override={kite.durationOverride}
                   />
                 </div>
               )}
@@ -368,10 +468,33 @@ export function KiteList() {
       </div>
 
       {/* Footer */}
-      <div className="p-2 border-t border-sky-100 text-center">
+      <div className="p-2 border-t border-sky-100 text-center space-y-0.5">
         <span className="text-xs text-sky-400">
           {kites.length} kite{kites.length !== 1 ? "s" : ""}
         </span>
+        {isHybrid && (() => {
+          const totalBudget = totalDurationMinutes * 60;
+          const allocated = kiteDurations.reduce((sum, s) => sum + s, 0);
+          const overrideCount = kites.filter((k) => k.durationOverride != null && k.durationOverride > 0).length;
+          const formatTime = (s: number) => {
+            const m = Math.floor(s / 60);
+            const sec = s % 60;
+            return `${m}:${sec.toString().padStart(2, "0")}`;
+          };
+          const isOver = allocated > totalBudget;
+          return (
+            <div className="text-[10px] leading-tight">
+              <span className={isOver ? "text-red-500 font-medium" : "text-slate-400"}>
+                {formatTime(allocated)} / {formatTime(totalBudget)}
+              </span>
+              {overrideCount > 0 && (
+                <span className="text-amber-500 ml-1">
+                  ({overrideCount} custom)
+                </span>
+              )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

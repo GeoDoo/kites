@@ -13,9 +13,9 @@ let saveTimeout: NodeJS.Timeout | null = null;
 const SAVE_DELAY = 300; // ms - save quickly after changes
 
 // Force immediate save (used before page unload)
-let pendingSaveData: { kites: Kite[]; currentKiteIndex: number; currentTheme: string; title: string } | null = null;
+let pendingSaveData: { kites: Kite[]; currentKiteIndex: number; currentTheme: string; title: string; totalDurationMinutes: number } | null = null;
 
-async function saveToAPI(data: { kites: Kite[]; currentKiteIndex: number; currentTheme: string; title: string }) {
+async function saveToAPI(data: { kites: Kite[]; currentKiteIndex: number; currentTheme: string; title: string; totalDurationMinutes: number }) {
   try {
     const response = await fetch("/api/kites", {
       method: "POST",
@@ -30,7 +30,7 @@ async function saveToAPI(data: { kites: Kite[]; currentKiteIndex: number; curren
   }
 }
 
-function debouncedSave(data: { kites: Kite[]; currentKiteIndex: number; currentTheme: string; title: string }) {
+function debouncedSave(data: { kites: Kite[]; currentKiteIndex: number; currentTheme: string; title: string; totalDurationMinutes: number }) {
   pendingSaveData = data; // Track pending save
   if (saveTimeout) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
@@ -140,6 +140,7 @@ interface KitesState {
   selectedBlockId: string | null;
   currentTheme: string;
   title: string;
+  totalDurationMinutes: number;
   _isLoaded: boolean;
 
   // Data Loading
@@ -150,6 +151,10 @@ interface KitesState {
 
   // Theme
   setTheme: (themeId: string) => void;
+
+  // Duration
+  setTotalDuration: (minutes: number) => void;
+  updateKiteDuration: (kiteId: string, seconds: number | undefined) => void;
 
   // Computed
   currentKite: () => Kite | null;
@@ -201,6 +206,7 @@ export const useKitesStore = create<KitesState>()(
         selectedBlockId: null,
         currentTheme: "sky",
         title: "Untitled Presentation",
+        totalDurationMinutes: 25,
         _isLoaded: false,
 
         // Load from API
@@ -218,6 +224,7 @@ export const useKitesStore = create<KitesState>()(
               );
               state.currentTheme = data.currentTheme ?? "sky";
               state.title = data.title ?? "Untitled Presentation";
+              state.totalDurationMinutes = data.totalDurationMinutes ?? 25;
               state._isLoaded = true;
             });
           } catch (error) {
@@ -236,6 +243,21 @@ export const useKitesStore = create<KitesState>()(
         // Theme setter
         setTheme: (themeId) => {
           set({ currentTheme: themeId });
+        },
+
+        // Duration
+        setTotalDuration: (minutes) => {
+          set({ totalDurationMinutes: Math.max(1, minutes) });
+        },
+
+        updateKiteDuration: (kiteId, seconds) => {
+          set((state) => {
+            const kite = state.kites.find((k) => k.id === kiteId);
+            if (kite) {
+              kite.durationOverride = seconds;
+              kite.updatedAt = new Date().toISOString();
+            }
+          });
         },
 
         // Computed getters
@@ -549,6 +571,7 @@ useKitesStore.subscribe(
     currentKiteIndex: state.currentKiteIndex, 
     currentTheme: state.currentTheme,
     title: state.title,
+    totalDurationMinutes: state.totalDurationMinutes,
     _isLoaded: state._isLoaded 
   }),
   (current, previous) => {
@@ -558,13 +581,15 @@ useKitesStore.subscribe(
     const indexChanged = current.currentKiteIndex !== previous.currentKiteIndex;
     const themeChanged = current.currentTheme !== previous.currentTheme;
     const titleChanged = current.title !== previous.title;
+    const durationChanged = current.totalDurationMinutes !== previous.totalDurationMinutes;
     
-    if (kitesChanged || indexChanged || themeChanged || titleChanged) {
+    if (kitesChanged || indexChanged || themeChanged || titleChanged || durationChanged) {
       debouncedSave({
         kites: current.kites,
         currentKiteIndex: current.currentKiteIndex,
         currentTheme: current.currentTheme,
         title: current.title,
+        totalDurationMinutes: current.totalDurationMinutes,
       });
     }
   }
@@ -599,3 +624,6 @@ export const useCurrentTheme = () =>
 
 export const useTitle = () =>
   useKitesStore((state) => state.title);
+
+export const useTotalDurationMinutes = () =>
+  useKitesStore((state) => state.totalDurationMinutes);

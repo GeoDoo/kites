@@ -115,6 +115,7 @@ export interface AppState {
   currentKiteIndex: number;
   currentTheme: string;
   title: string;
+  totalDurationMinutes?: number;
 }
 
 export function loadAppState(): AppState {
@@ -124,6 +125,7 @@ export function loadAppState(): AppState {
   const currentKiteIndex = parseInt(getSetting("currentKiteIndex", "0"), 10);
   const currentTheme = getSetting("currentTheme", "sky");
   const title = getSetting("title", "Untitled Presentation");
+  const totalDurationMinutes = parseInt(getSetting("totalDurationMinutes", "25"), 10);
   
   // Load kites
   const kiteRecords = getAllKites();
@@ -134,6 +136,7 @@ export function loadAppState(): AppState {
     currentKiteIndex,
     currentTheme,
     title,
+    totalDurationMinutes,
   };
 }
 
@@ -146,6 +149,9 @@ export function saveAppState(state: AppState): void {
     setSetting("currentKiteIndex", state.currentKiteIndex.toString());
     setSetting("currentTheme", state.currentTheme);
     setSetting("title", state.title || "Untitled Presentation");
+    if (state.totalDurationMinutes != null) {
+      setSetting("totalDurationMinutes", state.totalDurationMinutes.toString());
+    }
     
     // Get existing kite IDs
     const existingIds = new Set(

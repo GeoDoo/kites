@@ -278,3 +278,45 @@ export function getBackgroundForKite(theme: KiteTheme, kiteIndex: number): strin
   }
   return theme.backgroundImage;
 }
+
+/**
+ * Resolve per-kite durations from total budget.
+ * - In Hybrid mode: kites with `durationOverride` use that value;
+ *   remaining budget is split evenly among unset kites.
+ * - In non-Hybrid mode: total is split evenly across all kites.
+ * Returns an array of seconds per kite, same order as the input.
+ */
+export function resolveKiteDurations(
+  totalMinutes: number,
+  kites: Array<{ durationOverride?: number }>,
+  isHybrid: boolean
+): number[] {
+  const totalSeconds = totalMinutes * 60;
+  const count = kites.length;
+  if (count === 0) return [];
+
+  if (!isHybrid) {
+    const perKite = Math.floor(totalSeconds / count);
+    return kites.map(() => perKite);
+  }
+
+  // Hybrid: respect overrides, distribute remainder
+  let allocated = 0;
+  let unsetCount = 0;
+  for (const kite of kites) {
+    if (kite.durationOverride != null && kite.durationOverride > 0) {
+      allocated += kite.durationOverride;
+    } else {
+      unsetCount++;
+    }
+  }
+
+  const remaining = Math.max(0, totalSeconds - allocated);
+  const perUnset = unsetCount > 0 ? Math.floor(remaining / unsetCount) : 0;
+
+  return kites.map((kite) =>
+    kite.durationOverride != null && kite.durationOverride > 0
+      ? kite.durationOverride
+      : perUnset
+  );
+}

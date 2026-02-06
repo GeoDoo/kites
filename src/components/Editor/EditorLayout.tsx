@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useKitesStore, useKites, useIsLoaded, useCurrentTheme, useTitle } from "@/lib/store";
+import { useKitesStore, useKites, useIsLoaded, useCurrentTheme, useTitle, useTotalDurationMinutes } from "@/lib/store";
 import { KiteList } from "./KiteList";
 import { KiteCanvas } from "./KiteCanvas";
 import { ElementToolbar } from "./ElementToolbar";
 import { ThemeSelector } from "./ThemeSelector";
 import { SpeakerNotesPanel } from "./SpeakerNotesPanel";
 import { cn } from "@/lib/utils";
-import { Play, Wind, Download, Loader2, ChevronDown, FileText, FileSpreadsheet, ExternalLink } from "lucide-react";
+import { Play, Wind, Download, Loader2, ChevronDown, FileText, FileSpreadsheet, ExternalLink, Clock } from "lucide-react";
 import { exportToPDF } from "@/lib/export-pdf";
 import { exportToPPTX } from "@/lib/export-pptx";
 
@@ -28,6 +28,8 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
   const themeId = useCurrentTheme();
   const title = useTitle();
   const setTitle = useKitesStore((state) => state.setTitle);
+  const totalDurationMinutes = useTotalDurationMinutes();
+  const setTotalDuration = useKitesStore((state) => state.setTotalDuration);
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState({ current: 0, total: 0 });
   const [exportType, setExportType] = useState<"pdf" | "pptx" | "gslides" | null>(null);
@@ -265,6 +267,21 @@ export function EditorLayout({ onPresentMode }: EditorLayoutProps) {
         <div className="flex items-center gap-2">
           {/* Theme selector */}
           <ThemeSelector />
+
+          {/* Duration control */}
+          <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl border border-sky-200 bg-white">
+            <Clock size={14} className="text-sky-400" />
+            <input
+              type="number"
+              min={1}
+              max={180}
+              value={totalDurationMinutes}
+              onChange={(e) => setTotalDuration(parseInt(e.target.value, 10) || 25)}
+              className="w-10 text-sm text-center text-slate-700 font-medium bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              title="Total presentation duration in minutes"
+            />
+            <span className="text-xs text-slate-400">min</span>
+          </div>
 
           {/* Export dropdown */}
           {kites.length > 0 && (

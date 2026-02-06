@@ -12,7 +12,7 @@ interface KiteViewProps {
   index: number;
   isActive?: boolean;
   theme: KiteTheme;
-  totalKites: number;  // Total number of kites for timer calculation
+  timerSeconds: number;  // Pre-resolved duration for this kite
   timerStarted?: boolean;  // Whether the timer has been started (for presenter view)
 }
 
@@ -20,15 +20,10 @@ interface KiteViewProps {
  * KiteView Component
  * Renders a single kite in presentation mode (full-screen with scroll-snap)
  */
-export function KiteView({ kite, index, isActive = false, theme, totalKites, timerStarted = true }: KiteViewProps) {
+export function KiteView({ kite, index, isActive = false, theme, timerSeconds, timerStarted = true }: KiteViewProps) {
   const backgroundImage = getBackgroundForKite(theme, index);
   const [isAttacked, setIsAttacked] = useState(false);
   const [attackType, setAttackType] = useState<AttackType>("scratch");
-  
-  // Calculate timer per kite: total talk time / number of kites
-  const timerSeconds = theme.timer?.totalTalkMinutes
-    ? Math.floor((theme.timer.totalTalkMinutes * 60) / totalKites)
-    : 60; // Default 60 seconds if not configured
   
   // Check if this theme has zombie attack enabled
   const hasZombieAttack = theme.effects?.zombieAttack?.enabled;
