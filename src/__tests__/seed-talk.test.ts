@@ -10,10 +10,6 @@ import { TALK_SLIDES, buildKites, type SlideDef } from "@/app/seed-talk/talk-dat
 const VALID_BLOCK_TYPES = ["h1", "h2", "h3", "h4", "text"] as const;
 
 describe("TALK_SLIDES data", () => {
-  it("should contain exactly 48 slides", () => {
-    expect(TALK_SLIDES).toHaveLength(48);
-  });
-
   it("every slide should have at least one block", () => {
     TALK_SLIDES.forEach((slide, i) => {
       expect(slide.blocks.length, `slide ${i + 1}`).toBeGreaterThan(0);
@@ -72,10 +68,11 @@ describe("buildKites", () => {
 
   it("should preserve block content from slide definitions", () => {
     const kites = buildKites();
-    // Spot-check first slide title
+    // First slide title
     expect(kites[0].contentBlocks[0].content).toBe("Imagination vs. Reality");
-    // Spot-check last slide
-    expect(kites[47].contentBlocks[0].content).toBe("Thank You");
+    // Last slide
+    const last = kites[kites.length - 1];
+    expect(last.contentBlocks[0].content).toBe("Thank You");
   });
 
   it("should set timestamps on every kite", () => {

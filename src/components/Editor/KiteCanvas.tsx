@@ -5,7 +5,7 @@ import { useKitesStore, useCurrentKite, useCurrentTheme } from "@/lib/store";
 import { CanvasElement } from "./CanvasElement";
 import { AlignmentGuides, calculateGuides } from "./AlignmentGuides";
 import { ContextMenu } from "./ContextMenu";
-import { getTheme, getBackgroundForKite, resolveThemeForKite } from "@/lib/themes";
+import { getBackgroundForKite, resolveThemeForKite } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
 interface DragState {

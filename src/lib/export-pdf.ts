@@ -1,5 +1,3 @@
-"use client";
-
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import type { Kite, ContentBlock } from "./types";
@@ -23,8 +21,6 @@ export async function exportToPDF(
   // Use lower quality for large exports to avoid memory issues
   const defaultQuality = kites.length > 20 ? 1 : 2;
   const { filename = "presentation.pdf", quality = defaultQuality, onProgress } = options;
-  const theme = themes[themeId] || themes.sky;
-
   // Create PDF in landscape orientation (16:9 aspect ratio)
   const pdf = new jsPDF({
     orientation: "landscape",

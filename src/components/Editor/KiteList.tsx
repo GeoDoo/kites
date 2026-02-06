@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef, useEffect, useCallback, useState } from "react";
+import { createPortal } from "react-dom";
 import { useKitesStore, useKites, useCurrentKiteIndex, useCurrentTheme } from "@/lib/store";
 import { getTheme, getBackgroundForKite, resolveThemeForKite, themeList } from "@/lib/themes";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, Copy, Palette, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Copy, ChevronDown } from "lucide-react";
 
 /**
  * Per-kite theme picker — shown on each thumbnail when Hybrid mode is active.
@@ -17,7 +18,9 @@ function KiteThemePicker({
   currentOverride?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const { updateKiteThemeOverride } = useKitesStore();
 
   const effectiveId = currentOverride || "sky";
@@ -26,11 +29,26 @@ function KiteThemePicker({
   // Exclude "hybrid" from the per-kite picker — it's the meta-theme
   const pickableThemes = themeList.filter((t) => t.id !== "hybrid");
 
+  const handleToggle = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!isOpen && buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
+        setMenuPos({ top: rect.bottom + 4, left: rect.left });
+      }
+      setIsOpen((prev) => !prev);
+    },
+    [isOpen]
+  );
+
   // Close on outside click
   useEffect(() => {
     if (!isOpen) return;
     function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        buttonRef.current && !buttonRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     }
@@ -38,13 +56,19 @@ function KiteThemePicker({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [isOpen]);
 
+  // Close on scroll (the sidebar scrolls and would leave the menu floating)
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleScroll = () => setIsOpen(false);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, [isOpen]);
+
   return (
-    <div ref={dropdownRef} className="relative z-20">
+    <>
       <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen(!isOpen);
-        }}
+        ref={buttonRef}
+        onClick={handleToggle}
         className={cn(
           "flex items-center gap-0.5 px-1 py-0.5 rounded text-[8px] leading-none",
           "bg-slate-800/60 text-white backdrop-blur-sm",
@@ -60,40 +84,44 @@ function KiteThemePicker({
         <ChevronDown size={7} />
       </button>
 
-      {isOpen && (
-        <div
-          className="absolute top-full left-0 mt-1 w-32 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-50"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {pickableThemes.map((t) => (
-            <button
-              key={t.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                updateKiteThemeOverride(kiteId, t.id === "sky" ? undefined : t.id);
-                setIsOpen(false);
-              }}
-              className={cn(
-                "w-full flex items-center gap-2 px-2 py-1.5 text-left text-xs hover:bg-slate-50 transition-colors",
-                t.id === effectiveId && "bg-sky-50"
-              )}
-            >
-              <div className="flex items-center gap-px shrink-0">
-                <div
-                  className="w-2.5 h-2.5 rounded-l-sm border border-slate-200"
-                  style={{ backgroundColor: t.colors.background }}
-                />
-                <div
-                  className="w-2.5 h-2.5 rounded-r-sm border border-slate-200"
-                  style={{ backgroundColor: t.colors.accent }}
-                />
-              </div>
-              <span className="text-slate-700 truncate">{t.name}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+      {isOpen &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className="fixed w-32 bg-white rounded-lg shadow-xl border border-slate-200 py-1"
+            style={{ top: menuPos.top, left: menuPos.left, zIndex: 9999 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {pickableThemes.map((t) => (
+              <button
+                key={t.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateKiteThemeOverride(kiteId, t.id === "sky" ? undefined : t.id);
+                  setIsOpen(false);
+                }}
+                className={cn(
+                  "w-full flex items-center gap-2 px-2 py-1.5 text-left text-xs hover:bg-slate-50 transition-colors",
+                  t.id === effectiveId && "bg-sky-50"
+                )}
+              >
+                <div className="flex items-center gap-px shrink-0">
+                  <div
+                    className="w-2.5 h-2.5 rounded-l-sm border border-slate-200"
+                    style={{ backgroundColor: t.colors.background }}
+                  />
+                  <div
+                    className="w-2.5 h-2.5 rounded-r-sm border border-slate-200"
+                    style={{ backgroundColor: t.colors.accent }}
+                  />
+                </div>
+                <span className="text-slate-700 truncate">{t.name}</span>
+              </button>
+            ))}
+          </div>,
+          document.body
+        )}
+    </>
   );
 }
 

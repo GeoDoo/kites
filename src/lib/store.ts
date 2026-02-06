@@ -44,7 +44,8 @@ if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', () => {
     if (pendingSaveData) {
       // Use sendBeacon for reliable save on page unload
-      navigator.sendBeacon('/api/kites', JSON.stringify(pendingSaveData));
+      const blob = new Blob([JSON.stringify(pendingSaveData)], { type: 'application/json' });
+      navigator.sendBeacon('/api/kites', blob);
     }
   });
 }
@@ -209,10 +210,14 @@ export const useKitesStore = create<KitesState>()(
             const data = await response.json();
 
             set((state) => {
-              state.kites = data.kites || [];
-              state.currentKiteIndex = data.currentKiteIndex || 0;
-              state.currentTheme = data.currentTheme || "sky";
-              state.title = data.title || "Untitled Presentation";
+              const kites = data.kites ?? [];
+              state.kites = kites;
+              state.currentKiteIndex = Math.max(
+                0,
+                Math.min(data.currentKiteIndex ?? 0, kites.length - 1)
+              );
+              state.currentTheme = data.currentTheme ?? "sky";
+              state.title = data.title ?? "Untitled Presentation";
               state._isLoaded = true;
             });
           } catch (error) {

@@ -1,9 +1,7 @@
-"use client";
-
 import PptxGenJS from "pptxgenjs";
 import html2canvas from "html2canvas";
 import type { Kite, ContentBlock } from "./types";
-import { themes, getBackgroundForKite, type KiteTheme } from "./themes";
+import { themes, getBackgroundForKite, resolveThemeForKite, type KiteTheme } from "./themes";
 
 interface ExportOptions {
   filename?: string;
@@ -42,8 +40,6 @@ export async function exportToPPTX(
   options: ExportOptions = {}
 ): Promise<void> {
   const { filename, onProgress } = options;
-  const theme = themes[themeId] || themes.sky;
-
   // Create presentation
   const pptx = new PptxGenJS();
   
@@ -62,18 +58,21 @@ export async function exportToPPTX(
     
     onProgress?.(i + 1, kites.length);
     
+    // Resolve per-kite theme (handles Hybrid mode)
+    const kiteTheme = resolveThemeForKite(themeId, kite.themeOverride);
+
     // Create slide
     const slide = pptx.addSlide();
     
     // Capture background as screenshot (preserves all CSS effects)
-    const bgDataUrl = await captureBackgroundAsImage(kite, theme, i);
+    const bgDataUrl = await captureBackgroundAsImage(kite, kiteTheme, i);
     
     if (bgDataUrl) {
       // Use captured background
       slide.background = { data: bgDataUrl };
     } else {
       // Fallback to solid color
-      slide.background = { color: theme.colors.background.replace("#", "") };
+      slide.background = { color: kiteTheme.colors.background.replace("#", "") };
     }
 
     // Sort blocks by zIndex and add to slide as editable text
@@ -82,7 +81,7 @@ export async function exportToPPTX(
     );
 
     for (const block of sortedBlocks) {
-      addBlockToSlide(slide, block, theme);
+      addBlockToSlide(slide, block, kiteTheme);
     }
     
     // Small delay to allow React state updates for progress
@@ -334,11 +333,27 @@ function parseHtmlFormatting(html: string): {
   text = text.replace(/<[^>]+>/g, "");
   // Decode HTML entities
   text = text.replace(/&nbsp;/g, " ");
+  text = text.replace(/&ldquo;/g, "\u201C");
+  text = text.replace(/&rdquo;/g, "\u201D");
+  text = text.replace(/&lsquo;/g, "\u2018");
+  text = text.replace(/&rsquo;/g, "\u2019");
+  text = text.replace(/&mdash;/g, "\u2014");
+  text = text.replace(/&ndash;/g, "\u2013");
+  text = text.replace(/&rarr;/g, "\u2192");
+  text = text.replace(/&larr;/g, "\u2190");
+  text = text.replace(/&hellip;/g, "\u2026");
+  text = text.replace(/&there4;/g, "\u2234");
+  text = text.replace(/&ne;/g, "\u2260");
+  text = text.replace(/&le;/g, "\u2264");
+  text = text.replace(/&ge;/g, "\u2265");
   text = text.replace(/&amp;/g, "&");
   text = text.replace(/&lt;/g, "<");
   text = text.replace(/&gt;/g, ">");
   text = text.replace(/&quot;/g, '"');
   text = text.replace(/&#39;/g, "'");
+  // Catch any remaining numeric entities
+  text = text.replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)));
+  text = text.replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
   // Clean up multiple newlines
   text = text.replace(/\n{3,}/g, "\n\n");
   

@@ -220,9 +220,7 @@ export function i(text: string): string {
 
 export const TALK_SLIDES: SlideDef[] = [
   titleSlide("Imagination vs. Reality", "A Survivor's Guide to AI Hype", "JSMonthly | 2026"),
-  quoteSlide("We suffer more often in imagination than in reality.", "Seneca, 2,000 years ago"),
-  bigStatement("&ldquo;Will AI take my job?&rdquo;", 60),
-  contentSlide("Tonight", `Every scenario${br2}Every angle${br2}One honest answer`),
+  contentSlide("&ldquo;Will AI take my job?&rdquo;", `Possible scenarios${br2}Every possible angle${br2}One hopeful answer`),
   contentWithPunchline(
     "My Credentials (for Surviving Hype)",
     ["jQuery 1.4 (2010)", "Angular &rarr; React &rarr; Vue", "SPAs &rarr; SSR &rarr; Server Components", "Monoliths &rarr; Microservices &rarr; Monoliths", "2008 crash. Pandemic. Crypto. Now AI."].join(br2),
@@ -246,20 +244,60 @@ export const TALK_SLIDES: SlideDef[] = [
   statementSub(`Four existential threats.${br}15 years.`, `${b("I'm still here. So are you.")}`, 44),
   contentSlide("What Actually Stayed Constant", ul("Server &harr; Client", "Request &rarr; Response", "State &rarr; UI", "A human decides what to build")),
   sectionBreak("Let's explore the scenarios."),
+
+  // ── Scenario 1 ──────────────────────────────────────────────────────────────
   scenarioTitle("Scenario 1", "&ldquo;Everyone becomes an engineer&rdquo;"),
-  statementSub("The Dentist Analogy", `If AI made dentistry available to everyone&hellip;${br2}Would ${i("you")} want to become a dentist?`),
-  statementSub("Capability &ne; Desire", `Just because you ${i("can")}${br}doesn't mean you ${i("want to")}.`),
-  contentWithPunchline("Engineering Self-Selects", `The three virtues of a programmer:${br2}${ul("Laziness", "Impatience", "Hubris")}${br}&mdash; Larry Wall${br2}Plus: curiosity, problem-solving, imagination.`, "AI doesn't change who's drawn to this."),
-  contentWithPunchline("The Economics", `More engineers${br}&rarr; salaries drop${br}&rarr; incentive disappears${br}&rarr; supply stabilizes`, "Self-correcting."),
-  contentWithPunchline("The Counter-Argument", `Cheaper engineering${br}&rarr; more projects get funded${br}&rarr; more demand for engineers`, "Induced demand."),
+  contentWithPunchline(
+    "1a &mdash; The Desire Argument",
+    `${b("P1:")} Every profession requires a specific disposition${br}(laziness, impatience, hubris &mdash; Larry Wall).${br2}${b("P2:")} AI lowers the ${i("barrier to entry")} but does not alter human disposition.`,
+    "&there4; AI does not meaningfully increase the number of people who want to be engineers."
+  ),
+  contentWithPunchline(
+    "1b &mdash; The Economics Argument",
+    `${b("P1:")} If supply of engineers increases, wages fall.${br2}${b("P2:")} If wages fall, the incentive to enter the profession disappears.`,
+    "&there4; An oversupply of engineers is self-correcting."
+  ),
+  contentWithPunchline(
+    "1c &mdash; The Counter: Induced Demand",
+    `${b("P1:")} If the cost of engineering labour falls, more projects become viable.${br2}${b("P2:")} More viable projects create more demand for engineers.`,
+    "&there4; Cheaper engineering can increase, not decrease, total employment."
+  ),
+
+  // ── Scenario 2 ──────────────────────────────────────────────────────────────
   scenarioTitle("Scenario 2", "&ldquo;AI replaces engineers directly&rdquo;"),
-  statementSub("The Limits of Statistics", `AI can be right ${i("often")}.${br2}AI can never be right ${i("always")}.`),
-  contentSlide("The Human Edge", `When AI gets it wrong, you need:${br2}${ul("Judgment", "Creativity", "The ability to reframe the problem entirely")}`),
-  statementSub("Connection", `We build software ${b("to connect")}.${br2}Would you want to work with machines only?`),
+  contentWithPunchline(
+    "2a &mdash; The Statistical Ceiling",
+    `${b("P1:")} AI is a statistical model; it generalises from observed patterns.${br2}${b("P2:")} Novel problems, edge cases, and black swans have no prior pattern to match.`,
+    "&there4; AI cannot reliably solve problems it has never seen &mdash; which is when engineers are most needed."
+  ),
+  contentWithPunchline(
+    "2b &mdash; The Judgment Argument",
+    `${b("P1:")} Software that matters requires judgment about ${i("what to build")} and ${i("whether it should exist")}.${br2}${b("P2:")} Judgment requires context, values, and accountability &mdash; none of which a statistical model possesses.`,
+    "&there4; AI can generate code but cannot replace the decision-maker."
+  ),
+  contentWithPunchline(
+    "2c &mdash; The Connection Argument",
+    `${b("P1:")} Software exists to serve and connect people.${br2}${b("P2:")} People prefer to collaborate with other people (trust, empathy, shared stakes).`,
+    "&there4; Fully replacing engineers with machines undermines the purpose of building software."
+  ),
+
+  // ── Scenario 3 ──────────────────────────────────────────────────────────────
   scenarioTitle("Scenario 3", "&ldquo;Full automation&rdquo;"),
-  statementSub("The Doom Version", `AI automates everything${br}&rarr; mass unemployment${br}&rarr; economic collapse`),
-  statementSub("The Flip", `If ${i("everyone")} is replaced&hellip;${br}do we even need money?${br2}That's not dystopia.${br}That's ${b("utopia")}.`),
-  contentWithPunchline("The Real Constraint", `AI is expensive:${br2}${ul("Training costs billions", "Inference eats GPUs", "Energy bills are real")}`, "Economics limits the apocalypse."),
+  contentWithPunchline(
+    "3a &mdash; The Doom Path",
+    `${b("P1:")} If AI automates all productive labour, mass unemployment follows.${br2}${b("P2:")} Mass unemployment causes economic collapse (no wages &rarr; no consumption &rarr; no economy).`,
+    "&there4; Full automation within the current system is self-destructive &mdash; and thus self-limiting."
+  ),
+  contentWithPunchline(
+    "3b &mdash; The Utopia Flip",
+    `${b("P1:")} If no human labour is needed, the scarcity that money mediates vanishes.${br2}${b("P2:")} If scarcity vanishes, money and power dynamics become unnecessary.`,
+    "&there4; Full automation leads to post-scarcity &mdash; utopia, not dystopia."
+  ),
+  contentWithPunchline(
+    "3c &mdash; The Resource Constraint",
+    `${b("P1:")} AI training and inference require enormous capital, energy, and hardware.${br2}${b("P2:")} These resources are finite and expensive.`,
+    "&there4; The speed of automation is bounded by physics and economics. The apocalypse has a budget."
+  ),
   sectionBreak("The deeper truth."),
   statementSub("The Pattern Illusion", `LLMs assume:${br2}${b("The future looks like the past.")}`),
   contentWithPunchline("When Patterns Break", ul("Novelty", "Edge cases", "Black swans", "Context shifts"), "No pattern to match."),
