@@ -326,11 +326,11 @@ export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset
                 className="whitespace-nowrap font-bold text-center"
                 style={{
                   fontFamily: "'Creepster', cursive",
-                  fontSize: `${Math.max(14, zombie.size * 0.22)}px`,
-                  color: "#8b0000",
-                  textShadow: "0 0 6px rgba(139,0,0,0.8), 0 1px 2px rgba(0,0,0,0.9)",
-                  letterSpacing: "0.5px",
-                  marginTop: `-${zombie.size * 0.1}px`,
+                  fontSize: `${Math.max(18, zombie.size * 0.3)}px`,
+                  color: "#39ff14",
+                  textShadow: "0 0 8px rgba(57,255,20,0.6), 0 0 16px rgba(57,255,20,0.3), 0 2px 3px rgba(0,0,0,0.9)",
+                  letterSpacing: "1px",
+                  marginTop: `-${zombie.size * 0.08}px`,
                 }}
               >
                 {zombie.name}
