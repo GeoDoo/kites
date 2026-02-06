@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useKitesStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import type { ContentBlock } from "@/lib/types";
+import type { ContentBlock, BlockType } from "@/lib/types";
 import type { KiteTheme } from "@/lib/themes";
-import { Trash2, Copy, Move, ArrowUpToLine, ArrowDownToLine, Palette, Bold, Italic, Underline, Strikethrough, List, ListOrdered, Quote, Minus, Plus, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { Trash2, Copy, Move, ArrowUpToLine, ArrowDownToLine, Palette, Bold, Italic, Underline, Strikethrough, List, ListOrdered, Quote, Minus, Plus, AlignLeft, AlignCenter, AlignRight, ChevronDown } from "lucide-react";
 import { calculateGuides } from "./AlignmentGuides";
 import { ImageUploadModal } from "./ImageUploadModal";
 
@@ -36,7 +37,7 @@ export function CanvasElement({
   snapThreshold = 2,
   theme,
 }: CanvasElementProps) {
-  const { updateBlockPosition, updateBlockContent, updateBlock, deleteBlock, duplicateBlock, bringToFront, sendToBack } =
+  const { updateBlockPosition, updateBlockContent, updateBlock, deleteBlock, duplicateBlock, bringToFront, sendToBack, snapshot } =
     useKitesStore();
   const [isEditing, setIsEditing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -46,6 +47,7 @@ export function CanvasElement({
   const [showInlineColorPicker, setShowInlineColorPicker] = useState(false);
   const elementRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const typeSwitcherBtnRef = useRef<HTMLButtonElement>(null);
   const dragStartRef = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
   const resizeStartRef = useRef({ 
     width: 0, 
@@ -63,6 +65,7 @@ export function CanvasElement({
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (type === "text" || type === "h1" || type === "h2" || type === "h3" || type === "h4") {
+      snapshot(); // Capture state before text edit
       setIsEditing(true);
     } else if (type === "image") {
       setShowImageModal(true);
@@ -162,6 +165,7 @@ export function CanvasElement({
       contentRef.current?.blur();
     }
     if (e.key === "Delete" && !isEditing && isSelected) {
+      snapshot();
       deleteBlock(block.id);
     }
   };
@@ -210,6 +214,7 @@ export function CanvasElement({
     e.preventDefault();
     e.stopPropagation();
     
+    snapshot(); // Capture state before drag
     setIsDragging(true);
     dragStartRef.current = {
       x: e.clientX,
@@ -269,6 +274,7 @@ export function CanvasElement({
     e.preventDefault();
     e.stopPropagation();
     
+    snapshot(); // Capture state before resize
     setIsResizing(true);
     resizeStartRef.current = {
       width: position.width,
@@ -389,6 +395,41 @@ export function CanvasElement({
     document.addEventListener("mouseup", handleMouseUp);
   };
 
+  // Block type switcher
+  const [showTypeSwitcher, setShowTypeSwitcher] = useState(false);
+
+  const blockTypeOptions: { type: BlockType; label: string; fontSize: number }[] = [
+    { type: "h1", label: "H1", fontSize: 72 },
+    { type: "h2", label: "H2", fontSize: 56 },
+    { type: "h3", label: "H3", fontSize: 40 },
+    { type: "h4", label: "H4", fontSize: 32 },
+    { type: "text", label: "Text", fontSize: 24 },
+  ];
+
+  const changeBlockType = (newType: BlockType) => {
+    const option = blockTypeOptions.find((o) => o.type === newType);
+    if (!option || newType === type) {
+      setShowTypeSwitcher(false);
+      return;
+    }
+    snapshot(); // Capture state before type change
+    const isNewHeading = newType.startsWith("h");
+    updateBlock(block.id, {
+      type: newType,
+      style: {
+        ...block.style,
+        fontSize: option.fontSize,
+        fontWeight: isNewHeading ? "bold" : (block.style?.fontWeight === "bold" ? "normal" : block.style?.fontWeight),
+      },
+    });
+    setShowTypeSwitcher(false);
+  };
+
+  // Close type switcher when editing ends
+  useEffect(() => {
+    if (!isEditing) setShowTypeSwitcher(false);
+  }, [isEditing]);
+
   // Check if block is a heading type
   const isHeading = type === "h1" || type === "h2" || type === "h3" || type === "h4";
 
@@ -501,26 +542,80 @@ export function CanvasElement({
         zIndex: block.zIndex ?? 1,
       }}
     >
-      {/* Drag handle */}
+      {/* Block type label + Drag handle */}
       {isSelected && !isEditing && (
         <div
           onMouseDown={handleDragStart}
-          className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-1 bg-sky-500 text-white rounded-md text-xs cursor-grab shadow-md z-10"
+          className="absolute top-0 left-0 flex items-center gap-2 px-1.5 py-0.5 bg-sky-500/70 text-white text-[10px] cursor-grab z-20 rounded-br-md"
         >
-          <Move size={12} />
-          <span>Drag</span>
+          <span className="font-bold uppercase tracking-wide">{type === "text" ? "Text" : type === "image" ? "Image" : type.toUpperCase()}</span>
+          <div className="flex items-center gap-0.5 opacity-70">
+            <Move size={10} />
+            <span>Drag</span>
+          </div>
         </div>
       )}
 
       {/* Text formatting toolbar - only when editing */}
       {isEditing && (type === "text" || isHeading) && (
         <div 
-          className="fixed top-20 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-white border border-slate-200 rounded-md shadow-lg z-[100] p-1"
+          className="fixed top-[108px] left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-white border border-slate-200 rounded-lg shadow-xl z-[100] p-1"
           onMouseDown={(e) => {
             e.preventDefault(); // Prevent losing focus
             e.stopPropagation();
           }}
         >
+          {/* Heading level switcher — only for heading blocks */}
+          {isHeading && (
+            <>
+              <div className="relative">
+                <button
+                  ref={typeSwitcherBtnRef}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setShowTypeSwitcher((prev) => !prev);
+                  }}
+                  className="flex items-center gap-1 px-2 py-1.5 rounded font-bold text-xs bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors min-w-[52px] justify-between"
+                  title="Change heading level"
+                >
+                  <span>{type.toUpperCase()}</span>
+                  <ChevronDown size={10} />
+                </button>
+                {showTypeSwitcher && createPortal(
+                  <div
+                    className="fixed py-1 bg-white border border-slate-200 rounded-lg shadow-xl min-w-[120px]"
+                    style={{
+                      top: (typeSwitcherBtnRef.current?.getBoundingClientRect().bottom ?? 0) + 4,
+                      left: typeSwitcherBtnRef.current?.getBoundingClientRect().left ?? 0,
+                      zIndex: 99999,
+                    }}
+                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  >
+                    {blockTypeOptions.filter((o) => o.type !== "text").map((opt) => (
+                      <button
+                        key={opt.type}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          changeBlockType(opt.type);
+                        }}
+                        className={cn(
+                          "w-full flex items-center justify-between px-3 py-1.5 text-xs transition-colors",
+                          opt.type === type
+                            ? "bg-sky-50 text-sky-700 font-bold"
+                            : "text-slate-600 hover:bg-slate-50"
+                        )}
+                      >
+                        <span className="font-semibold">{opt.label}</span>
+                        <span className="text-[10px] text-slate-400">{opt.fontSize}px</span>
+                      </button>
+                    ))}
+                  </div>,
+                  document.body
+                )}
+              </div>
+              <div className="w-px h-5 bg-slate-200 mx-1" />
+            </>
+          )}
           <button
             onMouseDown={(e) => {
               e.preventDefault();
@@ -736,26 +831,26 @@ export function CanvasElement({
           {/* Top-left */}
           <div
             onMouseDown={(e) => handleResizeStart(e, "nw")}
-            className="absolute -top-2 -left-2 w-4 h-4 bg-sky-500 rounded-full cursor-nw-resize shadow-md z-10"
+            className="absolute top-0 left-0 w-3 h-3 bg-sky-500 rounded-br-full cursor-nw-resize shadow-md z-20"
           />
           {/* Top-right */}
           <div
             onMouseDown={(e) => handleResizeStart(e, "ne")}
-            className="absolute -top-2 -right-2 w-4 h-4 bg-sky-500 rounded-full cursor-ne-resize shadow-md z-10"
+            className="absolute top-0 right-0 w-3 h-3 bg-sky-500 rounded-bl-full cursor-ne-resize shadow-md z-20"
           />
           {/* Bottom-left */}
           <div
             onMouseDown={(e) => handleResizeStart(e, "sw")}
-            className="absolute -bottom-2 -left-2 w-4 h-4 bg-sky-500 rounded-full cursor-sw-resize shadow-md z-10"
+            className="absolute bottom-0 left-0 w-3 h-3 bg-sky-500 rounded-tr-full cursor-sw-resize shadow-md z-20"
           />
           {/* Bottom-right */}
           <div
             onMouseDown={(e) => handleResizeStart(e, "se")}
-            className="absolute -bottom-2 -right-2 w-4 h-4 bg-sky-500 rounded-full cursor-se-resize shadow-md z-10"
+            className="absolute bottom-0 right-0 w-3 h-3 bg-sky-500 rounded-tl-full cursor-se-resize shadow-md z-20"
           />
           {/* Size indicator while resizing */}
           {isResizing && (
-            <div className="absolute -bottom-8 right-0 px-2 py-1 bg-slate-800/75 text-white text-xs rounded shadow-md z-10 font-mono">
+            <div className="absolute bottom-0 right-0 px-2 py-0.5 bg-slate-800/80 text-white text-[10px] rounded-tl shadow-md z-20 font-mono backdrop-blur-sm">
               {position.width.toFixed(0)}% × {position.height.toFixed(0)}%
             </div>
           )}
@@ -764,14 +859,14 @@ export function CanvasElement({
 
       {/* Position indicator while dragging */}
       {isDragging && (
-        <div className="absolute -top-8 -right-2 px-2 py-1 bg-slate-800/75 text-white text-xs rounded shadow-md z-10 font-mono">
+        <div className="absolute top-0 right-0 px-2 py-0.5 bg-slate-800/80 text-white text-[10px] rounded-bl shadow-md z-20 font-mono backdrop-blur-sm">
           {position.x.toFixed(0)}%, {position.y.toFixed(0)}%
         </div>
       )}
 
       {/* Block actions */}
       {isSelected && !isEditing && !isDragging && !isResizing && (
-        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex items-center bg-white border border-sky-200 rounded-md shadow-md z-10">
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex items-center bg-white/90 backdrop-blur-sm border border-sky-200 rounded-t-md shadow-md z-20">
           {/* Color picker - only for text elements */}
           {(isHeading || type === "text") && (
             <div className="relative">
@@ -833,6 +928,7 @@ export function CanvasElement({
           <button
             onClick={(e) => {
               e.stopPropagation();
+              snapshot();
               bringToFront(block.id);
             }}
             className={cn(
@@ -846,6 +942,7 @@ export function CanvasElement({
           <button
             onClick={(e) => {
               e.stopPropagation();
+              snapshot();
               sendToBack(block.id);
             }}
             className="p-1.5 hover:bg-sky-50 text-slate-500 hover:text-slate-700 border-r border-slate-100"
@@ -856,6 +953,7 @@ export function CanvasElement({
           <button
             onClick={(e) => {
               e.stopPropagation();
+              snapshot();
               duplicateBlock(block.id);
             }}
             className="p-1.5 hover:bg-sky-50 text-slate-500 hover:text-slate-700 border-r border-slate-100"
@@ -866,6 +964,7 @@ export function CanvasElement({
           <button
             onClick={(e) => {
               e.stopPropagation();
+              snapshot();
               deleteBlock(block.id);
             }}
             className="p-1.5 hover:bg-red-50 text-slate-500 hover:text-red-500 rounded-r-md"

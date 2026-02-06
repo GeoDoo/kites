@@ -81,9 +81,30 @@ export function KiteCanvas({ className }: KiteCanvasProps) {
     selectBlock(null);
   };
 
-  // Handle keyboard navigation to cycle through elements
+  // Handle keyboard navigation, delete, and undo/redo
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const isMod = e.metaKey || e.ctrlKey;
+
+      // Undo: Cmd/Ctrl+Z (without Shift)
+      if (isMod && e.key === "z" && !e.shiftKey) {
+        // Don't intercept when typing in an input or contentEditable
+        const active = document.activeElement;
+        if (active?.tagName === "INPUT" || active?.tagName === "TEXTAREA" || active?.getAttribute("contenteditable")) return;
+        e.preventDefault();
+        useKitesStore.getState().undo();
+        return;
+      }
+
+      // Redo: Cmd/Ctrl+Shift+Z  or  Cmd/Ctrl+Y
+      if ((isMod && e.key === "z" && e.shiftKey) || (isMod && e.key === "y")) {
+        const active = document.activeElement;
+        if (active?.tagName === "INPUT" || active?.tagName === "TEXTAREA" || active?.getAttribute("contenteditable")) return;
+        e.preventDefault();
+        useKitesStore.getState().redo();
+        return;
+      }
+
       if (!currentKite || currentKite.contentBlocks.length === 0) return;
       
       // Tab to cycle through elements
@@ -93,11 +114,9 @@ export function KiteCanvas({ className }: KiteCanvasProps) {
         const currentIndex = blocks.findIndex(b => b.id === selectedBlockId);
         
         if (e.shiftKey) {
-          // Shift+Tab: go to previous
           const prevIndex = currentIndex <= 0 ? blocks.length - 1 : currentIndex - 1;
           selectBlock(blocks[prevIndex].id);
         } else {
-          // Tab: go to next
           const nextIndex = currentIndex >= blocks.length - 1 ? 0 : currentIndex + 1;
           selectBlock(blocks[nextIndex].id);
         }
@@ -106,9 +125,9 @@ export function KiteCanvas({ className }: KiteCanvasProps) {
       // Delete selected element
       if ((e.key === "Delete" || e.key === "Backspace") && selectedBlockId) {
         const activeElement = document.activeElement;
-        // Don't delete if user is typing in an input
         if (activeElement?.tagName !== "INPUT" && !activeElement?.getAttribute("contenteditable")) {
           e.preventDefault();
+          useKitesStore.getState().snapshot();
           useKitesStore.getState().deleteBlock(selectedBlockId);
         }
       }

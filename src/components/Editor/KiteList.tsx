@@ -227,7 +227,7 @@ function KiteDurationEditor({
 export function KiteList() {
   const kites = useKites();
   const currentKiteIndex = useCurrentKiteIndex();
-  const { setCurrentKite, addKite, deleteKite, duplicateKite } = useKitesStore();
+  const { setCurrentKite, addKite, deleteKite, duplicateKite, snapshot } = useKitesStore();
   const currentThemeId = useCurrentTheme();
   const totalDurationMinutes = useTotalDurationMinutes();
   const isHybrid = currentThemeId === "hybrid";
@@ -268,16 +268,19 @@ export function KiteList() {
   );
 
   const handleAddKite = () => {
+    snapshot();
     addKite();
   };
 
   const handleDeleteKite = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    snapshot();
     deleteKite(id);
   };
 
   const handleDuplicateKite = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    snapshot();
     duplicateKite(id);
   };
 
@@ -328,28 +331,13 @@ export function KiteList() {
               )}
             >
               {/* Kite number */}
-              <div className="absolute top-1 left-1 z-10 px-1.5 py-0.5 bg-slate-800/50 text-white text-xs rounded-md backdrop-blur-sm">
+              <div className="absolute top-1 left-1 z-20 px-1.5 py-0.5 bg-slate-800/50 text-white text-xs rounded-md backdrop-blur-sm">
                 {index + 1}
               </div>
 
-              {/* Per-kite theme picker + duration (Hybrid mode only) */}
-              {isHybrid && (
-                <div className="absolute bottom-1 left-1 right-1 z-10 flex items-end justify-between">
-                  <KiteThemePicker
-                    kiteId={kite.id}
-                    currentOverride={kite.themeOverride}
-                  />
-                  <KiteDurationEditor
-                    kiteId={kite.id}
-                    resolvedSeconds={kiteDurations[index] ?? 0}
-                    override={kite.durationOverride}
-                  />
-                </div>
-              )}
-
               {/* Mini kite preview — uses the resolved theme for this kite */}
               <div
-                className="aspect-video relative overflow-hidden"
+                className="aspect-video relative overflow-hidden z-0"
                 style={{ backgroundColor: kiteTheme.colors.background }}
               >
                 {/* Theme background image with treatment */}
@@ -446,7 +434,7 @@ export function KiteList() {
               </div>
 
               {/* Actions overlay */}
-              <div className="absolute top-1 right-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute top-1 right-1 z-20 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={(e) => handleDuplicateKite(kite.id, e)}
                   className="p-1 rounded bg-slate-800/50 text-white hover:bg-slate-800/70 backdrop-blur-sm"
@@ -462,6 +450,21 @@ export function KiteList() {
                   <Trash2 size={10} />
                 </button>
               </div>
+
+              {/* Per-kite theme picker + duration (Hybrid mode only) — rendered last for correct stacking */}
+              {isHybrid && (
+                <div className="absolute bottom-1 left-1 right-1 z-20 flex items-end justify-between">
+                  <KiteThemePicker
+                    kiteId={kite.id}
+                    currentOverride={kite.themeOverride}
+                  />
+                  <KiteDurationEditor
+                    kiteId={kite.id}
+                    resolvedSeconds={kiteDurations[index] ?? 0}
+                    override={kite.durationOverride}
+                  />
+                </div>
+              )}
             </div>
           );
         })}

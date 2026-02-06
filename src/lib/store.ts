@@ -85,6 +85,15 @@ if (typeof window !== 'undefined') {
   });
 }
 
+// ─── Undo / Redo history ──────────────────────────────────────────────────────
+// Kept outside Zustand state to avoid triggering auto-save or re-renders.
+
+const MAX_HISTORY = 80;
+type UndoSnapshot = string; // JSON-stringified kites array
+
+let undoStack: UndoSnapshot[] = [];
+let redoStack: UndoSnapshot[] = [];
+
 /**
  * Generate a UUID v4
  */
@@ -222,6 +231,13 @@ interface KitesState {
   // Navigation
   goToNextKite: () => void;
   goToPreviousKite: () => void;
+
+  // Undo / Redo
+  snapshot: () => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
 
   // Utility
   clearAllKites: () => void;
@@ -572,6 +588,56 @@ export const useKitesStore = create<KitesState>()(
             }
           });
         },
+
+        // Undo / Redo
+        snapshot: () => {
+          const kites = get().kites;
+          const snap = JSON.stringify(kites);
+          // Don't push if identical to the last snapshot
+          if (undoStack.length > 0 && undoStack[undoStack.length - 1] === snap) return;
+          undoStack.push(snap);
+          if (undoStack.length > MAX_HISTORY) undoStack.shift();
+          // Any new action clears the redo stack
+          redoStack = [];
+        },
+
+        undo: () => {
+          if (undoStack.length === 0) return;
+          // Save current state to redo stack
+          const currentSnap = JSON.stringify(get().kites);
+          redoStack.push(currentSnap);
+          // Pop the last snapshot
+          const prev = undoStack.pop()!;
+          const restored = JSON.parse(prev) as Kite[];
+          set((state) => {
+            state.kites = restored;
+            // Clamp currentKiteIndex
+            if (state.currentKiteIndex >= restored.length) {
+              state.currentKiteIndex = Math.max(0, restored.length - 1);
+            }
+            state.selectedBlockId = null;
+          });
+        },
+
+        redo: () => {
+          if (redoStack.length === 0) return;
+          // Save current state to undo stack
+          const currentSnap = JSON.stringify(get().kites);
+          undoStack.push(currentSnap);
+          // Pop from redo
+          const next = redoStack.pop()!;
+          const restored = JSON.parse(next) as Kite[];
+          set((state) => {
+            state.kites = restored;
+            if (state.currentKiteIndex >= restored.length) {
+              state.currentKiteIndex = Math.max(0, restored.length - 1);
+            }
+            state.selectedBlockId = null;
+          });
+        },
+
+        canUndo: () => undoStack.length > 0,
+        canRedo: () => redoStack.length > 0,
 
         // Utility
         clearAllKites: () => {
