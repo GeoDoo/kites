@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { buildKites } from "./talk-data";
 
 // ─── Page Component ──────────────────────────────────────────────────────────
 
 export default function SeedTalkPage() {
-  const router = useRouter();
   const [status, setStatus] = useState<string>("");
   const [generating, setGenerating] = useState(false);
 
@@ -31,8 +29,8 @@ export default function SeedTalkPage() {
       });
 
       if (response.ok) {
-        setStatus(`Done! ${kites.length} slides created. Redirecting...`);
-        setTimeout(() => router.push("/"), 1000);
+        setStatus(`Done! ${kites.length} slides created.`);
+        setGenerating(false);
       } else {
         setStatus("Failed to save. Check console.");
         setGenerating(false);
