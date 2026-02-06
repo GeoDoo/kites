@@ -10,19 +10,39 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Strip inline styles, classes, scripts, and other non-HTML-structure attributes
- * from HTML content. Keeps only the HTML elements and their structural attributes
- * (href, src, colspan, rowspan, etc.).
+ * Strip presentational inline styles from HTML content while keeping structural ones.
  *
- * Block styling (font-size, color, alignment) is controlled by the block's style
- * property — not by CSS embedded in the HTML content.
+ * REMOVES: font-size, font-family, font-weight, font-style, color, background-color,
+ *          text-align, line-height (these are controlled by the block's style property).
+ * KEEPS:   width, height, display, vertical-align, margin, padding, border, etc.
+ *          (structural layout properties needed for inline images, tables, etc.)
+ *
+ * Also strips: <meta>, <style> blocks, <script> blocks, class attrs, data- attrs, HTML comments.
  */
 export function sanitizeBlockHtml(html: string): string {
   return html
     .replace(/<meta[^>]*>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
     .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/\s*style="[^"]*"/gi, "")
+    .replace(/\s*style="([^"]*)"/gi, (_match, styles: string) => {
+      // Strip only font/color/text properties that the block style controls
+      const cleaned = styles
+        .split(";")
+        .map((s: string) => s.trim())
+        .filter((s: string) => {
+          if (!s) return false;
+          const prop = s.split(":")[0]?.trim().toLowerCase() ?? "";
+          // Remove properties controlled by block.style
+          const blocked = [
+            "font-size", "font-family", "font-weight", "font-style",
+            "color", "background-color", "background",
+            "text-align", "line-height", "letter-spacing",
+          ];
+          return !blocked.includes(prop);
+        })
+        .join("; ");
+      return cleaned ? ` style="${cleaned}"` : "";
+    })
     .replace(/\s*class="[^"]*"/gi, "")
     .replace(/\s*data-[\w-]+="[^"]*"/gi, "")
     .replace(/<!--[\s\S]*?-->/g, "")

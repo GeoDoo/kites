@@ -61,6 +61,10 @@ export function CanvasElement({
 
   const { type, position, content, style } = block;
 
+  // Controls inside the 1920×1080 canvas are scaled down by the canvas transform.
+  // Counter-scale them so they appear at normal visual size.
+  const inverseScale = 1 / scale;
+
   // Handle double-click to edit
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -195,16 +199,8 @@ export function CanvasElement({
         return;
       }
     }
-    // Sanitise: strip everything except HTML structure
-    html = html
-      .replace(/<meta[^>]*>/gi, "")                        // remove <meta> tags
-      .replace(/<style[\s\S]*?<\/style>/gi, "")            // remove <style> blocks
-      .replace(/<script[\s\S]*?<\/script>/gi, "")          // remove <script> blocks
-      .replace(/\s*style="[^"]*"/gi, "")                   // remove inline style attributes
-      .replace(/\s*class="[^"]*"/gi, "")                   // remove class attributes
-      .replace(/\s*data-[\w-]+="[^"]*"/gi, "")             // remove data- attributes
-      .replace(/<!--[\s\S]*?-->/g, "")                     // remove HTML comments
-      .trim();
+    // Sanitise: strip presentational styles, keep structural HTML
+    html = sanitizeBlockHtml(html);
     document.execCommand("insertHTML", false, html);
   };
 
@@ -537,16 +533,27 @@ export function CanvasElement({
     
     const fontSize = style?.fontSize || defaultFontSizes[type] || 24;
     
+    // Resolve color: user override > heading color > text color (matches presentation mode)
+    const resolvedColor = style?.color
+      ? style.color
+      : isHeading
+        ? theme.colors.heading
+        : theme.colors.text;
+
+    // Resolve text shadow (matches presentation mode)
+    const resolvedShadow = theme.effects?.glow
+      ? `0 0 10px ${theme.colors.accent}, 0 0 20px ${theme.colors.accent}, 0 0 40px ${theme.colors.accent}60`
+      : isHeading && theme.colors.headingShadow
+        ? theme.colors.headingShadow
+        : undefined;
+
     const baseStyle: React.CSSProperties = {
       fontSize,
       fontWeight: style?.fontWeight || (isHeading ? "bold" : undefined),
       textAlign: style?.textAlign,
-      color: style?.color || theme.colors.text,
+      color: resolvedColor,
       fontFamily: theme.font ? `"${theme.font}", sans-serif` : undefined,
-      // Apply glow effect to text
-      textShadow: theme.effects?.glow 
-        ? `0 0 10px ${theme.colors.accent}, 0 0 20px ${theme.colors.accent}, 0 0 30px ${theme.colors.accent}40`
-        : undefined,
+      textShadow: resolvedShadow,
     };
 
     switch (type) {
@@ -638,6 +645,7 @@ export function CanvasElement({
         <div
           onMouseDown={handleDragStart}
           className="absolute top-0 left-0 flex items-center gap-2 px-1.5 py-0.5 bg-sky-500/70 text-white text-[10px] cursor-grab z-20 rounded-br-md"
+          style={{ transform: `scale(${inverseScale})`, transformOrigin: "top left" }}
         >
           <span className="font-bold uppercase tracking-wide">{type === "text" ? "Text" : type === "image" ? "Image" : type.toUpperCase()}</span>
           <div className="flex items-center gap-0.5 opacity-70">
@@ -647,8 +655,8 @@ export function CanvasElement({
         </div>
       )}
 
-      {/* Text formatting toolbar - only when editing */}
-      {isEditing && (type === "text" || isHeading) && (
+      {/* Text formatting toolbar - portaled to escape canvas transform */}
+      {isEditing && (type === "text" || isHeading) && createPortal(
         <div 
           className="fixed top-[108px] left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-white border border-slate-200 rounded-lg shadow-xl z-[100] p-1"
           onMouseDown={(e) => {
@@ -905,7 +913,8 @@ export function CanvasElement({
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Block content */}
@@ -916,37 +925,43 @@ export function CanvasElement({
         {renderContent()}
       </div>
 
-      {/* Resize handles - all four corners (always visible when selected, even while editing) */}
+      {/* Resize handles - all four corners (counter-scaled for usability) */}
       {isSelected && (
         <>
-          {/* Resize handles — 8px inset from corners so they stay inside overflow-hidden */}
           <div
             onMouseDown={(e) => handleResizeStart(e, "nw")}
             className="absolute top-0 left-0 w-5 h-5 cursor-nw-resize z-30"
+            style={{ transform: `scale(${inverseScale})`, transformOrigin: "top left" }}
           >
             <div className="absolute top-0 left-0 w-3 h-3 bg-white border-2 border-sky-500 rounded-sm shadow" />
           </div>
           <div
             onMouseDown={(e) => handleResizeStart(e, "ne")}
             className="absolute top-0 right-0 w-5 h-5 cursor-ne-resize z-30"
+            style={{ transform: `scale(${inverseScale})`, transformOrigin: "top right" }}
           >
             <div className="absolute top-0 right-0 w-3 h-3 bg-white border-2 border-sky-500 rounded-sm shadow" />
           </div>
           <div
             onMouseDown={(e) => handleResizeStart(e, "sw")}
             className="absolute bottom-0 left-0 w-5 h-5 cursor-sw-resize z-30"
+            style={{ transform: `scale(${inverseScale})`, transformOrigin: "bottom left" }}
           >
             <div className="absolute bottom-0 left-0 w-3 h-3 bg-white border-2 border-sky-500 rounded-sm shadow" />
           </div>
           <div
             onMouseDown={(e) => handleResizeStart(e, "se")}
             className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize z-30"
+            style={{ transform: `scale(${inverseScale})`, transformOrigin: "bottom right" }}
           >
             <div className="absolute bottom-0 right-0 w-3 h-3 bg-white border-2 border-sky-500 rounded-sm shadow" />
           </div>
           {/* Size indicator while resizing */}
           {isResizing && (
-            <div className="absolute bottom-0 right-0 px-2 py-0.5 bg-slate-800/80 text-white text-[10px] rounded-tl shadow-md z-20 font-mono backdrop-blur-sm">
+            <div
+              className="absolute bottom-0 right-0 px-2 py-0.5 bg-slate-800/80 text-white text-[10px] rounded-tl shadow-md z-20 font-mono backdrop-blur-sm"
+              style={{ transform: `scale(${inverseScale})`, transformOrigin: "bottom right" }}
+            >
               {position.width.toFixed(0)}% × {position.height.toFixed(0)}%
             </div>
           )}
@@ -955,14 +970,20 @@ export function CanvasElement({
 
       {/* Position indicator while dragging */}
       {isDragging && (
-        <div className="absolute top-0 right-0 px-2 py-0.5 bg-slate-800/80 text-white text-[10px] rounded-bl shadow-md z-20 font-mono backdrop-blur-sm">
+        <div
+          className="absolute top-0 right-0 px-2 py-0.5 bg-slate-800/80 text-white text-[10px] rounded-bl shadow-md z-20 font-mono backdrop-blur-sm"
+          style={{ transform: `scale(${inverseScale})`, transformOrigin: "top right" }}
+        >
           {position.x.toFixed(0)}%, {position.y.toFixed(0)}%
         </div>
       )}
 
       {/* Block actions */}
       {isSelected && !isEditing && !isDragging && !isResizing && (
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex items-center bg-white/90 backdrop-blur-sm border border-sky-200 rounded-t-md shadow-md z-20">
+        <div
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 flex items-center bg-white/90 backdrop-blur-sm border border-sky-200 rounded-t-md shadow-md z-20"
+          style={{ transform: `scale(${inverseScale})`, transformOrigin: "bottom center" }}
+        >
           {/* Color picker - only for text elements */}
           {(isHeading || type === "text") && (
             <div className="relative">
