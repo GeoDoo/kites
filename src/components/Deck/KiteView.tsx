@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { type Kite, type ContentBlock } from "@/lib/types";
 import { type KiteTheme, getBackgroundForKite } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 import { ZombieAttack, type AttackType } from "./ZombieAttack";
 import { PresentationTimer } from "./PresentationTimer";
+
+// Design dimensions — must match the editor canvas
+const DESIGN_W = 1920;
+const DESIGN_H = 1080;
 
 interface KiteViewProps {
   kite: Kite;
@@ -48,26 +52,42 @@ export function KiteView({ kite, index, isActive = false, theme, timerSeconds, t
     setIsAttacked(false);
   }, []);
   
+  // Scale the 1920×1080 design to fit the viewport — guarantees WYSIWYG
+  const sectionRef = useRef<HTMLElement>(null);
+  const [presentationScale, setPresentationScale] = useState(1);
+
+  useEffect(() => {
+    const computeScale = () => {
+      if (!sectionRef.current) return;
+      const parent = sectionRef.current;
+      const sw = parent.clientWidth / DESIGN_W;
+      const sh = parent.clientHeight / DESIGN_H;
+      setPresentationScale(Math.min(sw, sh));
+    };
+    computeScale();
+    window.addEventListener("resize", computeScale);
+    return () => window.removeEventListener("resize", computeScale);
+  }, []);
+
   return (
     <section
+      ref={sectionRef}
       id={`kite-${kite.id}`}
       data-kite-index={index}
       className={cn(
         "h-screen w-full flex-shrink-0 snap-start snap-always",
-        "relative overflow-hidden"
+        "relative overflow-hidden flex items-center justify-center"
       )}
       style={{
         backgroundColor: theme.colors.background,
         fontFamily: theme.font ? `"${theme.font}", sans-serif` : undefined,
-        // GPU acceleration hints for smoother scrolling
         willChange: "transform",
         transform: "translateZ(0)",
       }}
     >
-      {/* Theme background image with treatment */}
+      {/* Full-bleed background — fills entire viewport (no letterbox bars) */}
       {backgroundImage && (
         <>
-          {/* Background image layer */}
           <div 
             className="absolute inset-0 z-0"
             style={{
@@ -80,12 +100,10 @@ export function KiteView({ kite, index, isActive = false, theme, timerSeconds, t
                 theme.backgroundTreatment?.grayscale ? `grayscale(${theme.backgroundTreatment.grayscale})` : "",
                 theme.backgroundTreatment?.brightness ? `brightness(${theme.backgroundTreatment.brightness})` : "",
               ].filter(Boolean).join(" ") || undefined,
-              // Extend slightly to prevent blur edge artifacts
               margin: theme.backgroundTreatment?.blur ? `-${theme.backgroundTreatment.blur * 2}px` : undefined,
               padding: theme.backgroundTreatment?.blur ? `${theme.backgroundTreatment.blur * 2}px` : undefined,
             }}
           />
-          {/* Color overlay layer */}
           {theme.backgroundTreatment?.overlay && (
             <div 
               className="absolute inset-0 z-0"
@@ -95,7 +113,7 @@ export function KiteView({ kite, index, isActive = false, theme, timerSeconds, t
         </>
       )}
 
-      {/* Theme effects - SCANLINES */}
+      {/* Full-bleed theme effects */}
       {theme.effects?.scanlines && (
         <div 
           className="absolute inset-0 pointer-events-none z-10"
@@ -104,8 +122,6 @@ export function KiteView({ kite, index, isActive = false, theme, timerSeconds, t
           }}
         />
       )}
-      
-      {/* Theme effects - NOISE/PAPER */}
       {theme.effects?.noise && (
         <div 
           className="absolute inset-0 pointer-events-none z-10 opacity-20"
@@ -114,8 +130,6 @@ export function KiteView({ kite, index, isActive = false, theme, timerSeconds, t
           }}
         />
       )}
-      
-      {/* Theme effects - GLOW */}
       {theme.effects?.glow && (
         <div 
           className="absolute inset-0 pointer-events-none z-10"
@@ -126,46 +140,57 @@ export function KiteView({ kite, index, isActive = false, theme, timerSeconds, t
         />
       )}
 
-      {/* Presentation Timer - for all themes except zombie (which has its own timer in ZombieAttack) */}
-      {/* Only shown when timerStarted is true */}
-      {hasTimer && !hasZombieAttack && timerStarted && (
-        <PresentationTimer
-          timerSeconds={timerSeconds}
-          isActive={isActive}
-          theme={theme}
-        />
-      )}
-
-      {/* Zombie Attack Effect - only for zombie theme (includes its own timer) */}
-      {/* Only active when timerStarted is true */}
-      {hasZombieAttack && timerStarted && (
-        <ZombieAttack
-          config={theme.effects!.zombieAttack!}
-          timerSeconds={timerSeconds}
-          isActive={isActive}
-          onAttack={handleZombieAttack}
-          onReset={handleZombieReset}
-        />
-      )}
-
-      {/* Kite number indicator */}
-      <span 
-        className="absolute bottom-4 right-4 text-sm font-mono opacity-50"
-        style={{ color: theme.colors.textMuted }}
+      {/* Scaled 1920×1080 canvas for content — WYSIWYG with editor */}
+      <div
+        className="z-20"
+        style={{
+          width: DESIGN_W,
+          height: DESIGN_H,
+          transform: `scale(${presentationScale})`,
+          transformOrigin: "center center",
+          position: "relative",
+          flexShrink: 0,
+        }}
       >
-        {index + 1}
-      </span>
+        {/* Presentation Timer */}
+        {hasTimer && !hasZombieAttack && timerStarted && (
+          <PresentationTimer
+            timerSeconds={timerSeconds}
+            isActive={isActive}
+            theme={theme}
+          />
+        )}
 
-      {/* Render all content blocks */}
-      {kite.contentBlocks.map((block) => (
-        <PresentationBlock 
-          key={block.id} 
-          block={block} 
-          theme={theme} 
-          isAttacked={isAttacked && theme.effects?.zombieAttack?.enabled}
-          attackType={attackType}
-        />
-      ))}
+        {/* Zombie Attack Effect */}
+        {hasZombieAttack && timerStarted && (
+          <ZombieAttack
+            config={theme.effects!.zombieAttack!}
+            timerSeconds={timerSeconds}
+            isActive={isActive}
+            onAttack={handleZombieAttack}
+            onReset={handleZombieReset}
+          />
+        )}
+
+        {/* Kite number indicator */}
+        <span 
+          className="absolute bottom-4 right-4 text-sm font-mono opacity-50"
+          style={{ color: theme.colors.textMuted }}
+        >
+          {index + 1}
+        </span>
+
+        {/* Render all content blocks */}
+        {kite.contentBlocks.map((block) => (
+          <PresentationBlock 
+            key={block.id} 
+            block={block} 
+            theme={theme} 
+            isAttacked={isAttacked && theme.effects?.zombieAttack?.enabled}
+            attackType={attackType}
+          />
+        ))}
+      </div>
     </section>
   );
 }

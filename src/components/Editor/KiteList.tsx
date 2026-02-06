@@ -218,6 +218,11 @@ function KiteDurationEditor({
   );
 }
 
+/** Strip HTML tags to plain text for thumbnail previews */
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, " ").replace(/&[a-z]+;/gi, " ").replace(/\s+/g, " ").trim();
+}
+
 /**
  * KiteList Component
  * Sidebar showing all kites as thumbnails
@@ -227,13 +232,17 @@ function KiteDurationEditor({
 export function KiteList() {
   const kites = useKites();
   const currentKiteIndex = useCurrentKiteIndex();
-  const { setCurrentKite, addKite, deleteKite, duplicateKite, snapshot } = useKitesStore();
+  const { setCurrentKite, addKite, deleteKite, duplicateKite, reorderKites, snapshot } = useKitesStore();
   const currentThemeId = useCurrentTheme();
   const totalDurationMinutes = useTotalDurationMinutes();
   const isHybrid = currentThemeId === "hybrid";
   const kiteDurations = resolveKiteDurations(totalDurationMinutes, kites, isHybrid);
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  // Drag-and-drop reorder state
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
 
   // Scroll selected kite into view
   useEffect(() => {
@@ -284,6 +293,41 @@ export function KiteList() {
     duplicateKite(id);
   };
 
+  // Drag-and-drop handlers
+  const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
+    setDragIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    // Make the drag image semi-transparent
+    if (e.currentTarget instanceof HTMLElement) {
+      e.dataTransfer.setDragImage(e.currentTarget, e.currentTarget.offsetWidth / 2, 20);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDropIndex(index);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDropIndex(null);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, toIndex: number) => {
+    e.preventDefault();
+    if (dragIndex !== null && dragIndex !== toIndex) {
+      snapshot();
+      reorderKites(dragIndex, toIndex);
+    }
+    setDragIndex(null);
+    setDropIndex(null);
+  }, [dragIndex, snapshot, reorderKites]);
+
+  const handleDragEnd = useCallback(() => {
+    setDragIndex(null);
+    setDropIndex(null);
+  }, []);
+
   return (
     <div
       ref={listRef}
@@ -322,12 +366,20 @@ export function KiteList() {
                 else itemRefs.current.delete(index);
               }}
               onClick={() => setCurrentKite(index)}
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index)}
+              onDragEnd={handleDragEnd}
               className={cn(
-                "group relative cursor-pointer rounded-xl overflow-hidden",
+                "group relative cursor-grab rounded-xl overflow-hidden",
                 "border-2 transition-all shadow-sm",
                 index === currentKiteIndex
                   ? "border-sky-500 shadow-md"
-                  : "border-sky-100 hover:border-sky-200"
+                  : "border-sky-100 hover:border-sky-200",
+                dragIndex === index && "opacity-40 scale-95",
+                dropIndex === index && dragIndex !== null && dragIndex !== index && "border-sky-400 border-dashed ring-2 ring-sky-300/50"
               )}
             >
               {/* Kite number */}
@@ -335,7 +387,7 @@ export function KiteList() {
                 {index + 1}
               </div>
 
-              {/* Mini kite preview — uses the resolved theme for this kite */}
+              {/* Mini kite preview — renders actual content at 1920×1080 and scales down */}
               <div
                 className="aspect-video relative overflow-hidden z-0"
                 style={{ backgroundColor: kiteTheme.colors.background }}
@@ -371,59 +423,62 @@ export function KiteList() {
                   );
                 })()}
 
-                {/* Render mini blocks - sort by zIndex */}
-                {[...kite.contentBlocks]
-                  .sort((a, b) => (a.zIndex ?? 1) - (b.zIndex ?? 1))
-                  .map((block) => {
-                  const isHeading = block.type === "h1" || block.type === "h2" || block.type === "h3" || block.type === "h4";
-                  return (
-                    <div
-                      key={block.id}
-                      className="absolute overflow-hidden flex items-center"
-                      style={{
-                        left: `${block.position.x}%`,
-                        top: `${block.position.y}%`,
-                        width: `${block.position.width}%`,
-                        height: `${block.position.height}%`,
-                        zIndex: block.zIndex ?? 1,
-                        justifyContent: block.style?.textAlign === "center" ? "center" :
-                                       block.style?.textAlign === "right" ? "flex-end" : "flex-start",
-                        textAlign: block.style?.textAlign || "left",
-                      }}
-                    >
-                      {isHeading && (
-                        <div className="text-[4px] font-bold truncate w-full"
-                          style={{
-                            textAlign: block.style?.textAlign || "left",
-                            color: kiteTheme.colors.text,
-                          }}>
-                          {block.content}
-                        </div>
-                      )}
-                      {block.type === "text" && (
-                        <div className="text-[3px] truncate w-full"
-                          style={{
-                            textAlign: block.style?.textAlign || "left",
-                            color: kiteTheme.colors.textMuted,
-                          }}>
-                          {block.content}
-                        </div>
-                      )}
-                      {block.type === "image" && block.content ? (
-                        <img
-                          src={block.content}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
-                      ) : block.type === "image" ? (
-                        <div
-                          className="w-full h-full rounded-sm"
-                          style={{ backgroundColor: kiteTheme.colors.surface }}
-                        />
-                      ) : null}
-                    </div>
-                  );
-                })}
+                {/* Scaled-down full-fidelity kite render */}
+                <div
+                  className="absolute top-0 left-0 origin-top-left z-10"
+                  style={{
+                    width: 1920,
+                    height: 1080,
+                    transform: "scale(var(--thumb-scale))",
+                    fontFamily: kiteTheme.font ? `"${kiteTheme.font}", sans-serif` : undefined,
+                  }}
+                  ref={(el) => {
+                    if (el) {
+                      const parent = el.parentElement;
+                      if (parent) {
+                        el.style.setProperty("--thumb-scale", String(parent.clientWidth / 1920));
+                      }
+                    }
+                  }}
+                >
+                  {[...kite.contentBlocks]
+                    .sort((a, b) => (a.zIndex ?? 1) - (b.zIndex ?? 1))
+                    .map((block) => {
+                    const blockIsHeading = block.type === "h1" || block.type === "h2" || block.type === "h3" || block.type === "h4";
+                    const defaultSizes: Record<string, number> = { h1: 72, h2: 56, h3: 40, h4: 32, text: 24 };
+                    return (
+                      <div
+                        key={block.id}
+                        className="absolute overflow-hidden"
+                        style={{
+                          left: `${block.position.x}%`,
+                          top: `${block.position.y}%`,
+                          width: `${block.position.width}%`,
+                          height: `${block.position.height}%`,
+                          zIndex: block.zIndex ?? 1,
+                        }}
+                      >
+                        {(blockIsHeading || block.type === "text") && (
+                          <div
+                            className="w-full h-full overflow-hidden [&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6"
+                            style={{
+                              fontSize: block.style?.fontSize || defaultSizes[block.type] || 24,
+                              fontWeight: block.style?.fontWeight || (blockIsHeading ? "bold" : undefined),
+                              textAlign: block.style?.textAlign,
+                              color: block.style?.color || (blockIsHeading ? kiteTheme.colors.heading || kiteTheme.colors.text : kiteTheme.colors.text),
+                            }}
+                            dangerouslySetInnerHTML={{ __html: block.content }}
+                          />
+                        )}
+                        {block.type === "image" && block.content ? (
+                          <img src={block.content} alt="" className="w-full h-full object-cover" />
+                        ) : block.type === "image" ? (
+                          <div className="w-full h-full rounded-sm" style={{ backgroundColor: kiteTheme.colors.surface }} />
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
 
                 {/* Empty state */}
                 {kite.contentBlocks.length === 0 && (

@@ -156,7 +156,7 @@ function createBlock(
       zIndex: 10,
     },
     image: {
-      position: { x: 25, y: 20, width: 50, height: 60 },
+      position: { x: 20, y: 15, width: 60, height: 70 },
       content: content || "",
       zIndex: 1, // Images default to background layer
     },
@@ -296,9 +296,36 @@ export const useKitesStore = create<KitesState>()(
           set({ currentTheme: themeId });
         },
 
-        // Duration
+        // Duration — redistributes delta equally across ALL kites (including overrides)
         setTotalDuration: (minutes) => {
-          set({ totalDurationMinutes: Math.max(1, minutes) });
+          const newMinutes = Math.max(1, minutes);
+          const state = get();
+          const oldSeconds = state.totalDurationMinutes * 60;
+          const newSeconds = newMinutes * 60;
+          const delta = newSeconds - oldSeconds;
+          const count = state.kites.length;
+
+          if (count > 0 && delta !== 0 && state.currentTheme === "hybrid") {
+            // Import inline to avoid circular dep
+            const { resolveKiteDurations } = require("./themes");
+            const currentDurations: number[] = resolveKiteDurations(
+              state.totalDurationMinutes,
+              state.kites,
+              true
+            );
+            const perKiteDelta = delta / count;
+
+            set((draft) => {
+              draft.totalDurationMinutes = newMinutes;
+              draft.kites.forEach((kite, i) => {
+                const newDuration = Math.max(1, Math.round(currentDurations[i] + perKiteDelta));
+                kite.durationOverride = newDuration;
+                kite.updatedAt = new Date().toISOString();
+              });
+            });
+          } else {
+            set({ totalDurationMinutes: newMinutes });
+          }
         },
 
         updateKiteDuration: (kiteId, seconds) => {

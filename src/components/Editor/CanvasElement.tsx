@@ -72,9 +72,29 @@ export function CanvasElement({
     }
   };
 
-  // Handle image selection from modal
+  // Handle image selection — detect natural dimensions and match block aspect ratio
   const handleImageSelect = (imageUrl: string) => {
     updateBlockContent(block.id, imageUrl);
+
+    // Load the image to get its natural aspect ratio
+    const img = new Image();
+    img.onload = () => {
+      const imgRatio = img.naturalWidth / img.naturalHeight;
+      // Fit within a max of 60% width or 70% height, preserving ratio
+      const maxW = 60;
+      const maxH = 70;
+      let w = maxW;
+      let h = w / imgRatio * (16 / 9); // adjust for kite's 16:9 aspect
+      if (h > maxH) {
+        h = maxH;
+        w = h * imgRatio / (16 / 9);
+      }
+      // Center the block
+      const x = Math.max(0, (100 - w) / 2);
+      const y = Math.max(0, (100 - h) / 2);
+      updateBlockPosition(block.id, { x, y, width: w, height: h });
+    };
+    img.src = imageUrl;
   };
 
   // Handle color change
@@ -156,6 +176,28 @@ export function CanvasElement({
         updateBlockContent(block.id, contentRef.current.innerHTML);
       }
     }, 500); // Save after 500ms of no typing
+  };
+
+  // Handle paste — insert HTML as actual HTML, not escaped text
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const clipboard = e.clipboardData;
+    // Prefer text/html if available (e.g. copying from a rendered page)
+    let html = clipboard.getData("text/html");
+    if (!html) {
+      // Fall back to plain text — check if it looks like HTML
+      const plain = clipboard.getData("text/plain");
+      if (plain && /<[a-z][\s\S]*>/i.test(plain)) {
+        html = plain; // Paste raw HTML markup as actual HTML
+      } else {
+        // Regular plain text — insert as-is
+        document.execCommand("insertText", false, plain);
+        return;
+      }
+    }
+    // Sanitise: strip <meta>, <style>, and any outer wrapping from clipboard HTML
+    html = html.replace(/<meta[^>]*>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").trim();
+    document.execCommand("insertHTML", false, html);
   };
 
   // Handle keyboard in editing mode
@@ -275,6 +317,7 @@ export function CanvasElement({
     e.stopPropagation();
     
     snapshot(); // Capture state before resize
+    if (isEditing) setIsEditing(false); // Exit editing mode when resizing
     setIsResizing(true);
     resizeStartRef.current = {
       width: position.width,
@@ -285,6 +328,12 @@ export function CanvasElement({
       mouseY: e.clientY,
       corner,
     };
+
+    // For image blocks, compute aspect ratio (in percentage space, accounting for 16:9 kite)
+    // ratio = width% / height% that preserves the image's natural proportions
+    const aspectRatio = type === "image"
+      ? resizeStartRef.current.width / resizeStartRef.current.height
+      : 0;
 
     const handleMouseMove = (e: MouseEvent) => {
       const parentRect = elementRef.current?.parentElement?.getBoundingClientRect();
@@ -299,79 +348,113 @@ export function CanvasElement({
       let newWidth = resizeStartRef.current.width;
       let newHeight = resizeStartRef.current.height;
 
-      // Handle horizontal resize based on corner
-      if (corner.includes("e")) {
-        // East (right) - increase width
-        newWidth = Math.max(5, resizeStartRef.current.width + deltaX);
-      } else if (corner.includes("w")) {
-        // West (left) - move x and adjust width
-        newX = resizeStartRef.current.x + deltaX;
-        newWidth = resizeStartRef.current.width - deltaX;
-        if (newWidth < 5) {
-          newWidth = 5;
-          newX = resizeStartRef.current.x + resizeStartRef.current.width - 5;
+      if (type === "image" && aspectRatio > 0) {
+        // Proportional resize for images — use the dominant drag axis
+        const absDX = Math.abs(deltaX);
+        const absDY = Math.abs(deltaY);
+        const useWidth = absDX >= absDY;
+
+        if (useWidth) {
+          if (corner.includes("e")) {
+            newWidth = Math.max(5, resizeStartRef.current.width + deltaX);
+          } else if (corner.includes("w")) {
+            newWidth = Math.max(5, resizeStartRef.current.width - deltaX);
+          }
+          newHeight = newWidth / aspectRatio;
+        } else {
+          if (corner.includes("s")) {
+            newHeight = Math.max(5, resizeStartRef.current.height + deltaY);
+          } else if (corner.includes("n")) {
+            newHeight = Math.max(5, resizeStartRef.current.height - deltaY);
+          }
+          newWidth = newHeight * aspectRatio;
         }
-        if (newX < 0) {
+
+        // Recompute position for corners that move origin
+        if (corner.includes("w")) {
+          newX = resizeStartRef.current.x + resizeStartRef.current.width - newWidth;
+        }
+        if (corner.includes("n")) {
+          newY = resizeStartRef.current.y + resizeStartRef.current.height - newHeight;
+        }
+
+        // Clamp
+        if (newX < 0) { newWidth += newX; newHeight = newWidth / aspectRatio; newX = 0; }
+        if (newY < 0) { newHeight += newY; newWidth = newHeight * aspectRatio; newY = 0; }
+        if (newX + newWidth > 100) { newWidth = 100 - newX; newHeight = newWidth / aspectRatio; }
+        if (newY + newHeight > 100) { newHeight = 100 - newY; newWidth = newHeight * aspectRatio; }
+      } else {
+        // Free resize for non-image blocks
+        // Handle horizontal resize based on corner
+        if (corner.includes("e")) {
+          newWidth = Math.max(5, resizeStartRef.current.width + deltaX);
+        } else if (corner.includes("w")) {
+          newX = resizeStartRef.current.x + deltaX;
+          newWidth = resizeStartRef.current.width - deltaX;
+          if (newWidth < 5) {
+            newWidth = 5;
+            newX = resizeStartRef.current.x + resizeStartRef.current.width - 5;
+          }
+          if (newX < 0) {
+            newWidth = newWidth + newX;
+            newX = 0;
+          }
+        }
+
+        // Handle vertical resize based on corner
+        if (corner.includes("s")) {
+          newHeight = Math.max(5, resizeStartRef.current.height + deltaY);
+        } else if (corner.includes("n")) {
+          newY = resizeStartRef.current.y + deltaY;
+          newHeight = resizeStartRef.current.height - deltaY;
+          if (newHeight < 5) {
+            newHeight = 5;
+            newY = resizeStartRef.current.y + resizeStartRef.current.height - 5;
+          }
+          if (newY < 0) {
+            newHeight = newHeight + newY;
+            newY = 0;
+          }
+        }
+
+        // Clamp to canvas bounds
+        if (newX + newWidth > 100) newWidth = 100 - newX;
+        if (newY + newHeight > 100) newHeight = 100 - newY;
+
+        // Snap to common sizes
+        const commonSizes = [10, 20, 25, 33.33, 50, 66.67, 75, 80, 90, 100];
+        for (const size of commonSizes) {
+          if (Math.abs(newWidth - size) < snapThreshold) newWidth = size;
+          if (Math.abs(newHeight - size) < snapThreshold) newHeight = size;
+        }
+
+        // Snap edges to center and bounds
+        const rightEdge = newX + newWidth;
+        if (Math.abs(rightEdge - 50) < snapThreshold) newWidth = 50 - newX;
+        if (Math.abs(rightEdge - 100) < snapThreshold) newWidth = 100 - newX;
+        if (Math.abs(newX - 50) < snapThreshold) {
+          const diff = newX - 50;
+          newX = 50;
+          newWidth = newWidth + diff;
+        }
+        if (Math.abs(newX) < snapThreshold) {
           newWidth = newWidth + newX;
           newX = 0;
         }
-      }
 
-      // Handle vertical resize based on corner
-      if (corner.includes("s")) {
-        // South (bottom) - increase height
-        newHeight = Math.max(5, resizeStartRef.current.height + deltaY);
-      } else if (corner.includes("n")) {
-        // North (top) - move y and adjust height
-        newY = resizeStartRef.current.y + deltaY;
-        newHeight = resizeStartRef.current.height - deltaY;
-        if (newHeight < 5) {
-          newHeight = 5;
-          newY = resizeStartRef.current.y + resizeStartRef.current.height - 5;
+        const bottomEdge = newY + newHeight;
+        if (Math.abs(bottomEdge - 50) < snapThreshold) newHeight = 50 - newY;
+        if (Math.abs(bottomEdge - 100) < snapThreshold) newHeight = 100 - newY;
+        if (Math.abs(newY - 50) < snapThreshold) {
+          const diff = newY - 50;
+          newY = 50;
+          newHeight = newHeight + diff;
         }
-        if (newY < 0) {
+        if (Math.abs(newY) < snapThreshold) {
           newHeight = newHeight + newY;
           newY = 0;
         }
-      }
-
-      // Clamp to canvas bounds
-      if (newX + newWidth > 100) newWidth = 100 - newX;
-      if (newY + newHeight > 100) newHeight = 100 - newY;
-
-      // Snap to common sizes
-      const commonSizes = [10, 20, 25, 33.33, 50, 66.67, 75, 80, 90, 100];
-      for (const size of commonSizes) {
-        if (Math.abs(newWidth - size) < snapThreshold) newWidth = size;
-        if (Math.abs(newHeight - size) < snapThreshold) newHeight = size;
-      }
-
-      // Snap edges to center and bounds
-      const rightEdge = newX + newWidth;
-      if (Math.abs(rightEdge - 50) < snapThreshold) newWidth = 50 - newX;
-      if (Math.abs(rightEdge - 100) < snapThreshold) newWidth = 100 - newX;
-      if (Math.abs(newX - 50) < snapThreshold) {
-        const diff = newX - 50;
-        newX = 50;
-        newWidth = newWidth + diff;
-      }
-      if (Math.abs(newX) < snapThreshold) {
-        newWidth = newWidth + newX;
-        newX = 0;
-      }
-
-      const bottomEdge = newY + newHeight;
-      if (Math.abs(bottomEdge - 50) < snapThreshold) newHeight = 50 - newY;
-      if (Math.abs(bottomEdge - 100) < snapThreshold) newHeight = 100 - newY;
-      if (Math.abs(newY - 50) < snapThreshold) {
-        const diff = newY - 50;
-        newY = 50;
-        newHeight = newHeight + diff;
-      }
-      if (Math.abs(newY) < snapThreshold) {
-        newHeight = newHeight + newY;
-        newY = 0;
-      }
+      } // end non-image else
 
       updateBlockPosition(block.id, { x: newX, y: newY, width: newWidth, height: newHeight });
 
@@ -472,6 +555,7 @@ export function CanvasElement({
             onBlur={handleBlur}
             onInput={handleInput}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             className={cn(
               "w-full h-full outline-none overflow-auto",
               "whitespace-pre-wrap break-words",
@@ -539,7 +623,7 @@ export function CanvasElement({
         top: `${position.y}%`,
         width: `${position.width}%`,
         height: `${position.height}%`,
-        zIndex: block.zIndex ?? 1,
+        zIndex: isSelected ? 999 : (block.zIndex ?? 1),
       }}
     >
       {/* Block type label + Drag handle */}
@@ -825,29 +909,34 @@ export function CanvasElement({
         {renderContent()}
       </div>
 
-      {/* Resize handles - all four corners */}
-      {isSelected && !isEditing && (
+      {/* Resize handles - all four corners (always visible when selected, even while editing) */}
+      {isSelected && (
         <>
-          {/* Top-left */}
+          {/* Resize handles — 8px inset from corners so they stay inside overflow-hidden */}
           <div
             onMouseDown={(e) => handleResizeStart(e, "nw")}
-            className="absolute top-0 left-0 w-3 h-3 bg-sky-500 rounded-br-full cursor-nw-resize shadow-md z-20"
-          />
-          {/* Top-right */}
+            className="absolute top-0 left-0 w-5 h-5 cursor-nw-resize z-30"
+          >
+            <div className="absolute top-0 left-0 w-3 h-3 bg-white border-2 border-sky-500 rounded-sm shadow" />
+          </div>
           <div
             onMouseDown={(e) => handleResizeStart(e, "ne")}
-            className="absolute top-0 right-0 w-3 h-3 bg-sky-500 rounded-bl-full cursor-ne-resize shadow-md z-20"
-          />
-          {/* Bottom-left */}
+            className="absolute top-0 right-0 w-5 h-5 cursor-ne-resize z-30"
+          >
+            <div className="absolute top-0 right-0 w-3 h-3 bg-white border-2 border-sky-500 rounded-sm shadow" />
+          </div>
           <div
             onMouseDown={(e) => handleResizeStart(e, "sw")}
-            className="absolute bottom-0 left-0 w-3 h-3 bg-sky-500 rounded-tr-full cursor-sw-resize shadow-md z-20"
-          />
-          {/* Bottom-right */}
+            className="absolute bottom-0 left-0 w-5 h-5 cursor-sw-resize z-30"
+          >
+            <div className="absolute bottom-0 left-0 w-3 h-3 bg-white border-2 border-sky-500 rounded-sm shadow" />
+          </div>
           <div
             onMouseDown={(e) => handleResizeStart(e, "se")}
-            className="absolute bottom-0 right-0 w-3 h-3 bg-sky-500 rounded-tl-full cursor-se-resize shadow-md z-20"
-          />
+            className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize z-30"
+          >
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-white border-2 border-sky-500 rounded-sm shadow" />
+          </div>
           {/* Size indicator while resizing */}
           {isResizing && (
             <div className="absolute bottom-0 right-0 px-2 py-0.5 bg-slate-800/80 text-white text-[10px] rounded-tl shadow-md z-20 font-mono backdrop-blur-sm">
@@ -975,13 +1064,16 @@ export function CanvasElement({
         </div>
       )}
 
-      {/* Image upload modal */}
-      <ImageUploadModal
-        isOpen={showImageModal}
-        onClose={() => setShowImageModal(false)}
-        onImageSelect={handleImageSelect}
-        currentImage={type === "image" ? content : undefined}
-      />
+      {/* Image upload modal — portaled to escape block stacking context */}
+      {showImageModal && createPortal(
+        <ImageUploadModal
+          isOpen={showImageModal}
+          onClose={() => setShowImageModal(false)}
+          onImageSelect={handleImageSelect}
+          currentImage={type === "image" ? content : undefined}
+        />,
+        document.body
+      )}
     </div>
   );
 }
