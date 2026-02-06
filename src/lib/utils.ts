@@ -52,7 +52,7 @@ export function sanitizeBlockHtml(html: string): string {
 /** CSS class string for rendering HTML content blocks (tables, lists, quotes, etc.) */
 export const BLOCK_CONTENT_CLASSES = [
   "[&_blockquote]:border-l-4 [&_blockquote]:border-current [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:opacity-80",
-  "[&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6",
+  "[&_ul]:list-disc [&_ul]:list-inside [&_ul]:pl-2 [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:pl-2",
   "[&_table]:w-full [&_table]:border-collapse",
   "[&_td]:py-2 [&_td]:px-3 [&_td]:align-top",
   "[&_th]:py-2 [&_th]:px-3 [&_th]:align-top [&_th]:font-bold [&_th]:text-left",
