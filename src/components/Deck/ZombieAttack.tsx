@@ -22,6 +22,7 @@ type Direction = "left" | "right" | "top" | "bottom" | "top-left" | "top-right" 
 interface HordeZombie {
   id: number;
   emoji: string;
+  name: string; // LLM name tag
   size: number;
   direction: Direction;
   startX: number;
@@ -35,6 +36,15 @@ interface HordeZombie {
 
 // Zombie sprites only (no skulls - just the undead walkers)
 const ZOMBIE_SPRITES = ["🧟", "🧟‍♂️", "🧟‍♀️"];
+
+// The undead AI horde — each zombie gets a name tag
+const LLM_NAMES = [
+  "GPT-4o", "Claude", "Gemini", "LLaMA", "Mixtral", "Copilot",
+  "Grok", "Devin", "Cursor", "Codex", "Bard†", "PaLM†",
+  "DALL·E", "Midjourney", "Stable Diff", "Perplexity",
+  "ChatGPT", "v0", "Bolt", "Windsurf", "Sonnet", "Opus",
+  "o1", "o3", "Haiku", "Command R", "Phi-3", "Qwen",
+];
 
 const DIRECTIONS: Direction[] = [
   "left", "right", "top", "bottom", 
@@ -82,6 +92,9 @@ function getRotation(direction: Direction): number {
 
 // Generate randomized horde from all directions
 function generateHorde(count: number): HordeZombie[] {
+  // Shuffle LLM names so each run is different
+  const shuffled = [...LLM_NAMES].sort(() => Math.random() - 0.5);
+
   return Array.from({ length: count }, (_, i) => {
     const direction = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
     const start = getStartPosition(direction);
@@ -92,6 +105,7 @@ function generateHorde(count: number): HordeZombie[] {
     return {
       id: i,
       emoji: ZOMBIE_SPRITES[Math.floor(Math.random() * ZOMBIE_SPRITES.length)],
+      name: shuffled[i % shuffled.length], // Each zombie gets an LLM name
       size: 50 + Math.random() * 100, // 50-150px
       direction,
       startX: start.x,
@@ -292,19 +306,35 @@ export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset
               zIndex: 40 + Math.floor(pos.y), // Lower zombies (higher Y) in front
             }}
           >
-            <div 
-              className={`
-                leading-none
-                ${isAttacking ? "animate-zombie-attack" : "animate-zombie-walk"}
-              `}
-              style={{
-                fontSize: `${zombie.size}px`,
-                filter: `drop-shadow(0 0 ${zombie.size / 4}px rgba(0,0,0,0.9))`,
-                transform: `rotate(${zombie.rotation}deg)`,
-                animationDelay: `${(zombie.id * 0.15) % 0.6}s`,
-              }}
-            >
-              {zombie.emoji}
+            <div className="flex flex-col items-center">
+              <div 
+                className={`
+                  leading-none
+                  ${isAttacking ? "animate-zombie-attack" : "animate-zombie-walk"}
+                `}
+                style={{
+                  fontSize: `${zombie.size}px`,
+                  filter: `drop-shadow(0 0 ${zombie.size / 4}px rgba(0,0,0,0.9))`,
+                  transform: `rotate(${zombie.rotation}deg)`,
+                  animationDelay: `${(zombie.id * 0.15) % 0.6}s`,
+                }}
+              >
+                {zombie.emoji}
+              </div>
+              {/* LLM name tag */}
+              <span
+                className="whitespace-nowrap font-bold text-center"
+                style={{
+                  fontFamily: "'Creepster', cursive",
+                  fontSize: `${Math.max(14, zombie.size * 0.22)}px`,
+                  color: "#8b0000",
+                  textShadow: "0 0 6px rgba(139,0,0,0.8), 0 1px 2px rgba(0,0,0,0.9)",
+                  letterSpacing: "0.5px",
+                  marginTop: `-${zombie.size * 0.1}px`,
+                }}
+              >
+                {zombie.name}
+              </span>
             </div>
           </div>
         );
