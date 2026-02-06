@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useKitesStore } from "@/lib/store";
-import { cn } from "@/lib/utils";
+import { cn, sanitizeBlockHtml, BLOCK_CONTENT_CLASSES } from "@/lib/utils";
 import type { ContentBlock, BlockType } from "@/lib/types";
 import type { KiteTheme } from "@/lib/themes";
 import { Trash2, Copy, Move, ArrowUpToLine, ArrowDownToLine, Palette, Bold, Italic, Underline, Strikethrough, List, ListOrdered, Quote, Minus, Plus, AlignLeft, AlignCenter, AlignRight, ChevronDown } from "lucide-react";
@@ -157,8 +157,8 @@ export function CanvasElement({
       saveTimeoutRef.current = null;
     }
     if (contentRef.current) {
-      // Save innerHTML to preserve formatting (bold, italic, etc.)
-      updateBlockContent(block.id, contentRef.current.innerHTML);
+      // Save innerHTML — sanitise to keep only HTML structure, no inline styles
+      updateBlockContent(block.id, sanitizeBlockHtml(contentRef.current.innerHTML));
     }
   };
 
@@ -173,7 +173,7 @@ export function CanvasElement({
     }
     saveTimeoutRef.current = setTimeout(() => {
       if (contentRef.current && isEditing) {
-        updateBlockContent(block.id, contentRef.current.innerHTML);
+        updateBlockContent(block.id, sanitizeBlockHtml(contentRef.current.innerHTML));
       }
     }, 500); // Save after 500ms of no typing
   };
@@ -195,8 +195,16 @@ export function CanvasElement({
         return;
       }
     }
-    // Sanitise: strip <meta>, <style>, and any outer wrapping from clipboard HTML
-    html = html.replace(/<meta[^>]*>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").trim();
+    // Sanitise: strip everything except HTML structure
+    html = html
+      .replace(/<meta[^>]*>/gi, "")                        // remove <meta> tags
+      .replace(/<style[\s\S]*?<\/style>/gi, "")            // remove <style> blocks
+      .replace(/<script[\s\S]*?<\/script>/gi, "")          // remove <script> blocks
+      .replace(/\s*style="[^"]*"/gi, "")                   // remove inline style attributes
+      .replace(/\s*class="[^"]*"/gi, "")                   // remove class attributes
+      .replace(/\s*data-[\w-]+="[^"]*"/gi, "")             // remove data- attributes
+      .replace(/<!--[\s\S]*?-->/g, "")                     // remove HTML comments
+      .trim();
     document.execCommand("insertHTML", false, html);
   };
 
@@ -530,7 +538,7 @@ export function CanvasElement({
     const fontSize = style?.fontSize || defaultFontSizes[type] || 24;
     
     const baseStyle: React.CSSProperties = {
-      fontSize: fontSize * scale,
+      fontSize,
       fontWeight: style?.fontWeight || (isHeading ? "bold" : undefined),
       textAlign: style?.textAlign,
       color: style?.color || theme.colors.text,
@@ -563,8 +571,7 @@ export function CanvasElement({
               style?.textAlign === "right" && "text-right",
               isEditing && "cursor-text ring-2 ring-sky-400/50 rounded",
               isHeading && "font-bold",
-              "[&_blockquote]:border-l-4 [&_blockquote]:border-current [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:opacity-80",
-              "[&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6"
+              BLOCK_CONTENT_CLASSES
             )}
             style={baseStyle}
           />

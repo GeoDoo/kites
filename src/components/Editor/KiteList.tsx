@@ -4,7 +4,7 @@ import { useRef, useEffect, useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { useKitesStore, useKites, useCurrentKiteIndex, useCurrentTheme, useTotalDurationMinutes } from "@/lib/store";
 import { getTheme, getBackgroundForKite, resolveThemeForKite, resolveKiteDurations, themeList } from "@/lib/themes";
-import { cn } from "@/lib/utils";
+import { cn, sanitizeBlockHtml, BLOCK_CONTENT_CLASSES } from "@/lib/utils";
 import { Plus, Trash2, Copy, ChevronDown } from "lucide-react";
 
 /**
@@ -460,14 +460,14 @@ export function KiteList() {
                       >
                         {(blockIsHeading || block.type === "text") && (
                           <div
-                            className="w-full h-full overflow-hidden [&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6"
+                            className={cn("w-full h-full overflow-hidden", BLOCK_CONTENT_CLASSES)}
                             style={{
                               fontSize: block.style?.fontSize || defaultSizes[block.type] || 24,
                               fontWeight: block.style?.fontWeight || (blockIsHeading ? "bold" : undefined),
                               textAlign: block.style?.textAlign,
                               color: block.style?.color || (blockIsHeading ? kiteTheme.colors.heading || kiteTheme.colors.text : kiteTheme.colors.text),
                             }}
-                            dangerouslySetInnerHTML={{ __html: block.content }}
+                            dangerouslySetInnerHTML={{ __html: sanitizeBlockHtml(block.content) }}
                           />
                         )}
                         {block.type === "image" && block.content ? (

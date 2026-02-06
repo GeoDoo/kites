@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { type Kite, type ContentBlock } from "@/lib/types";
 import { type KiteTheme, getBackgroundForKite } from "@/lib/themes";
-import { cn } from "@/lib/utils";
+import { cn, sanitizeBlockHtml, BLOCK_CONTENT_CLASSES } from "@/lib/utils";
 import { ZombieAttack, type AttackType } from "./ZombieAttack";
 import { PresentationTimer } from "./PresentationTimer";
 
@@ -270,12 +270,11 @@ function PresentationBlock({
               style?.textAlign === "center" && "text-center",
               style?.textAlign === "right" && "text-right",
               isHeading && "font-bold",
-              "[&_blockquote]:border-l-4 [&_blockquote]:border-current [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:opacity-80",
-              "[&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6",
+              BLOCK_CONTENT_CLASSES,
               attackClass
             )}
             style={baseStyle}
-            dangerouslySetInnerHTML={{ __html: content }}
+            dangerouslySetInnerHTML={{ __html: sanitizeBlockHtml(content) }}
           />
         );
 

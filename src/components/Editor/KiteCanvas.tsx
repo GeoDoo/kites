@@ -159,20 +159,24 @@ export function KiteCanvas({ className }: KiteCanvasProps) {
         className
       )}
     >
-      {/* Canvas container with aspect ratio */}
+      {/* Wrapper constrains layout to the visual (scaled) size */}
+      <div style={{ width: 1920 * scale, height: 1080 * scale, position: "relative", flexShrink: 0 }}>
+      {/* Canvas rendered at native 1920×1080 then CSS-scaled — matches presentation mode */}
       <div
         onClick={handleCanvasClick}
         onContextMenu={handleContextMenu}
         className={cn(
-          "relative overflow-hidden",
+          "absolute top-0 left-0 overflow-hidden",
           "ring-1 ring-slate-300/50",
           theme.style === "pixel" && "rounded-none",
           theme.style === "sharp" && "rounded-sm",
           theme.style === "rounded" && "rounded-xl"
         )}
         style={{
-          width: 1920 * scale,
-          height: 1080 * scale,
+          width: 1920,
+          height: 1080,
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
           backgroundColor: theme.colors.background,
           borderRadius: theme.style === "pixel" ? 0 : theme.style === "sharp" ? 4 : 12,
           fontFamily: theme.font ? `"${theme.font}", sans-serif` : undefined,
@@ -264,7 +268,7 @@ export function KiteCanvas({ className }: KiteCanvasProps) {
                   linear-gradient(to right, ${theme.colors.textMuted} 1px, transparent 1px),
                   linear-gradient(to bottom, ${theme.colors.textMuted} 1px, transparent 1px)
                 `,
-                backgroundSize: `${10 * scale}% ${10 * scale}%`,
+                backgroundSize: "10% 10%",
               }}
             />
 
@@ -306,6 +310,7 @@ export function KiteCanvas({ className }: KiteCanvasProps) {
           </div>
         )}
       </div>
+      </div>{/* end layout wrapper */}
 
       {/* Context menu */}
       {contextMenu && (

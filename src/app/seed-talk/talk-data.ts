@@ -304,9 +304,9 @@ export const TALK_KITES: KiteDef[] = [
     },
     {
       type: "text",
-      content: `<table style="width: 100%; font-size: 0.75em; line-height: 1.35;"> <tbody><tr style="border-bottom-width: 2px; border-bottom-color: currentcolor;"><td style="padding:3px 6px;width:44px"><b>Year</b></td><td style="padding:3px 6px"><b>Tech Hype</b></td><td style="padding:3px 6px"><b>World</b></td><td style="padding:3px 6px"><b>Me</b></td></tr> <tr><td style="padding:3px 6px"><b>2010</b></td><td style="padding:3px 6px">jQuery dominance</td><td style="padding:3px 6px">Post-crisis recovery</td><td style="padding:3px 6px">Paying off family debt. No phone. Started learning to code</td></tr> <tr><td style="padding:3px 6px"><b>2011</b></td><td style="padding:3px 6px">Node.js gains traction</td><td style="padding:3px 6px">—</td><td style="padding:3px 6px">Motorcycle crash — nearly died. First €30 from coding</td></tr> <tr><td style="padding:3px 6px"><b>2012</b></td><td style="padding:3px 6px">AngularJS — <i>"MVC in the browser"</i></td><td style="padding:3px 6px">Facebook IPO flops</td><td style="padding:3px 6px">Finished BA (started 1998!)</td></tr> <tr><td style="padding:3px 6px"><b>2013</b></td><td style="padding:3px 6px">React released. NoSQL peak</td><td style="padding:3px 6px">Snowden. EU debt crisis</td><td style="padding:3px 6px">Made redundant. Co-founded Fort Security. New job</td></tr> <tr><td style="padding:3px 6px"><b>2015</b></td><td style="padding:3px 6px">React mainstream. GraphQL</td><td style="padding:3px 6px">—</td><td style="padding:3px 6px">Working toward Senior FE. Met love of my life</td></tr> <tr><td style="padding:3px 6px"><b>2017</b></td><td style="padding:3px 6px">Microservices peak</td><td style="padding:3px 6px">Bitcoin $20K</td><td style="padding:3px 6px">Engaged! Moved to Treviso, Italy</td></tr> <tr><td style="padding:3px 6px"><b>2018</b></td><td style="padding:3px 6px">Serverless peak. GraphQL peak</td><td style="padding:3px 6px">Crypto crash. GDPR</td><td style="padding:3px 6px">Remote job. Crypto wallet project. Senior FE</td></tr> <tr><td style="padding:3px 6px"><b>2019</b></td><td style="padding:3px 6px">JAMstack hype</td><td style="padding:3px 6px">—</td><td style="padding:3px 6px">London! VIOOH. Got married!</td></tr> <tr><td style="padding:3px 6px"><b>2020</b></td><td style="padding:3px 6px">SSR returns (Next.js)</td><td style="padding:3px 6px">COVID-19. Brexit</td><td style="padding:3px 6px">Pandemic + Brexit at the same time</td></tr> <tr><td style="padding:3px 6px"><b>2021</b></td><td style="padding:3px 6px">Web3/NFT peak ($17B)</td><td style="padding:3px 6px">Great Resignation</td><td style="padding:3px 6px">Left → Tech Lead → back to VIOOH as Tech Lead</td></tr> <tr><td style="padding:3px 6px"><b>2022</b></td><td style="padding:3px 6px">Web3 crash. ChatGPT (Nov)</td><td style="padding:3px 6px">War. Inflation. FTX. Layoffs</td><td style="padding:3px 6px">—</td></tr> <tr><td style="padding:3px 6px"><b>2023</b></td><td style="padding:3px 6px">AI explosion — GPT-4, Claude</td><td style="padding:3px 6px">167K layoffs. SVB</td><td style="padding:3px 6px">Engineering Manager</td></tr> <tr><td style="padding:3px 6px"><b>2024</b></td><td style="padding:3px 6px">AI agents — <i>"Engineers are dead"</i></td><td style="padding:3px 6px">Continued layoffs</td><td style="padding:3px 6px">—</td></tr> <tr><td style="padding:3px 6px"><b>2025</b></td><td style="padding:3px 6px">42% return to monoliths</td><td style="padding:3px 6px">127K+ tech layoffs</td><td style="padding:3px 6px">Working towards HoE</td></tr> <tr><td style="padding:3px 6px"><b>2026</b></td><td style="padding:3px 6px">AI everywhere — <i>"Now what?"</i></td><td style="padding:3px 6px">Epstein files!!</td><td style="padding:3px 6px"><b>This talk</b></td></tr></tbody></table>`,
-      position: { x: 5.35715722966719, y: 15.84249084249084, width: 90, height: 84.15750915750917 },
-      style: { fontSize: 36, textAlign: "left", color: "#000000" },
+      content: `<table> <tbody><tr><td><b>Year</b></td><td><b>Tech Hype</b></td><td><b>World</b></td><td><b>Me</b></td></tr> <tr><td><b>2010</b></td><td>jQuery dominance</td><td>Post-crisis recovery</td><td>Paying off family debt. No phone. Started learning to code</td></tr> <tr><td><b>2011</b></td><td>Node.js gains traction</td><td>—</td><td>Motorcycle crash — nearly died. First €30 from coding</td></tr> <tr><td><b>2012</b></td><td>AngularJS — <i>"MVC in the browser"</i></td><td>Facebook IPO flops</td><td>Finished BA (started 1998!)</td></tr> <tr><td><b>2013</b></td><td>React released. NoSQL peak</td><td>Snowden. EU debt crisis, GrEXit</td><td>Made redundant. Co-founded Fort Security. New job</td></tr> <tr><td><b>2015</b></td><td>React mainstream. GraphQL</td><td>—</td><td>Working toward Senior FE. Met love of my life</td></tr> <tr><td><b>2017</b></td><td>Microservices peak</td><td>Bitcoin $20K</td><td>Engaged! Moved to Treviso, Italy</td></tr> <tr><td><b>2018</b></td><td>Serverless peak. GraphQL peak</td><td>Crypto crash. GDPR</td><td>Remote job. Crypto wallet project. Senior FE</td></tr> <tr><td><b>2019</b></td><td>JAMstack hype</td><td>—</td><td>London! VIOOH. Got married!</td></tr> <tr><td><b>2020</b></td><td>SSR returns (Next.js)</td><td>COVID-19. Brexit</td><td>Pandemic + Brexit at the same time</td></tr> <tr><td><b>2021</b></td><td>Web3/NFT peak ($17B)</td><td>Great Resignation</td><td>Left → Tech Lead → back to VIOOH as Tech Lead</td></tr> <tr><td><b>2022</b></td><td>Web3 crash. ChatGPT (Nov)</td><td>War. Inflation. FTX. Layoffs</td><td>—</td></tr> <tr><td><b>2023</b></td><td>AI explosion — GPT-4, Claude</td><td>167K layoffs. SVB</td><td>Engineering Manager</td></tr> <tr><td><b>2024</b></td><td>AI agents — <i>"Engineers are dead"</i></td><td>Continued layoffs</td><td>—</td></tr> <tr><td><b>2025</b></td><td>42% return to monoliths</td><td>127K+ tech layoffs</td><td>Working towards HoE</td></tr> <tr><td><b>2026</b></td><td>AI everywhere — <i>"Now what?"</i></td><td>Epstein files!!</td><td><b>This talk</b></td></tr></tbody></table>`,
+      position: { x: 5.35715722966719, y: 15.84249084249084, width: 90, height: 75 },
+      style: { fontSize: 20, textAlign: "left", color: "#ffffff" },
       zIndex: 11,
     },
     {
@@ -329,16 +329,9 @@ export const TALK_KITES: KiteDef[] = [
     },
     {
       type: "text",
-      content: `<span style="font-size: 14.1556px;">1. <b>Server → Client → Server (rendering)</b> We spent a decade moving rendering from PHP/Rails to the browser with SPAs, then spent the next decade moving it back with SSR and React Server Components. </span><div><span style="font-size: 14.1556px;">2. <b>Monoliths → Microservices → Monoliths (architecture)</b> Netflix proved microservices work at scale; the rest of us proved they don't work at ours — and "modular monolith" became the new best practice. </span></div><div><span style="font-size: 14.1556px;">3. <b>SQL → NoSQL → SQL (data)</b> We abandoned relational databases for MongoDB because "web scale," then spent years reimplementing joins in application code before crawling back to Postgres. </span></div><div><span style="font-size: 14.1556px;">4. <b>REST → GraphQL → REST (APIs)</b> GraphQL was supposed to solve over-fetching forever; most teams ended up with a complexity explosion and quietly went back to simple REST (or tRPC). </span></div><div><span style="font-size: 14.1556px;">5. <b>Native → Web → Native-ish (mobile) </b>We built native iOS/Android apps (2010), then bet on "the mobile web is the future" and PWAs (2015), then came crawling back to React Native and Flutter because the web couldn't match native UX.</span></div><div><span style="font-size: 14.1556px;">6. <b>CSS → CSS-in-JS → CSS (styling) </b>We wrote CSS files (2010), then decided CSS was broken and put styles in JavaScript with styled-components (2016), then realised CSS itself got good (container queries, nesting, :has) and Tailwind won.</span></div>`,
-      position: { x: 5, y: 18.708791208791208, width: 90, height: 62.582417582417584 },
+      content: `<span>1. <b>Server → Client → Server (rendering)</b> We spent a decade moving rendering from PHP/Rails to the browser with SPAs, then spent the next decade moving it back with SSR and React Server Components. </span><div><span>2. <b>Monoliths → Microservices → Monoliths (architecture)</b> Netflix proved microservices work at scale; the rest of us proved they don't work at ours — and "modular monolith" became the new best practice. </span></div><div><span>3. <b>SQL → NoSQL → SQL (data)</b> We abandoned relational databases for MongoDB because "web scale," then spent years reimplementing joins in application code before crawling back to Postgres. </span></div><div><span>4. <b>REST → GraphQL → REST (APIs)</b> GraphQL was supposed to solve over-fetching forever; most teams ended up with a complexity explosion and quietly went back to simple REST (or tRPC). </span></div><div><span>5. <b>Native → Web → Native-ish (mobile) </b>We built native iOS/Android apps (2010), then bet on "the mobile web is the future" and PWAs (2015), then came crawling back to React Native and Flutter because the web couldn't match native UX.</span></div><div><span>6. <b>CSS → CSS-in-JS → CSS (styling) </b>We wrote CSS files (2010), then decided CSS was broken and put styles in JavaScript with styled-components (2016), then realised CSS itself got good (container queries, nesting, :has) and Tailwind won.</span></div>`,
+      position: { x: 5, y: 21.08974358974359, width: 90, height: 75 },
       style: { fontSize: 36, textAlign: "left" },
-      zIndex: 10,
-    },
-    {
-      type: "h3",
-      content: "Still here.",
-      position: { x: 5, y: 85.35531135531136, width: 90, height: 6.644688644688644 },
-      style: { fontSize: 36, fontWeight: "bold", textAlign: "center" },
       zIndex: 10,
     },
   ],
@@ -347,15 +340,15 @@ export const TALK_KITES: KiteDef[] = [
     blocks: [
     {
       type: "h2",
-      content: `4 existential threats...<br>15+ years, and...<div>1002 failed applications later...</div>`,
-      position: { x: 5, y: 14, width: 90, height: 22 },
+      content: `4 existential threats...<div>20 distasters...<br>15+ years, and...<div>1002 failed applications later...</div></div>`,
+      position: { x: 5, y: 14, width: 90, height: 28.95970695970696 },
       style: { fontSize: 44, fontWeight: "bold", textAlign: "center" },
       zIndex: 13,
     },
     {
       type: "text",
       content: `<b>I'm still here. So are you.</b>`,
-      position: { x: 10, y: 45, width: 80, height: 42 },
+      position: { x: 10, y: 85, width: 80, height: 10 },
       style: { fontSize: 30, textAlign: "center" },
       zIndex: 2,
     },
@@ -378,8 +371,8 @@ export const TALK_KITES: KiteDef[] = [
     },
     {
       type: "text",
-      content: `<ul><li>Server &harr; Client</li><li>Request &rarr; Response</li><li>State &rarr; UI</li><li>A human decides what to build</li></ul>`,
-      position: { x: 5, y: 24, width: 88, height: 68 },
+      content: `<ol><li><b>Server ↔ Client</b> — Mainframe/terminal (1960s) → browser/server → SPA/API → edge/SSR. The names change, the shape never does.</li><li><b>Request → Response</b> — HTTP/0.9 to HTTP/3, REST to GraphQL to gRPC. Different envelopes, same letter.</li><li><b>State → UI</b> — MVC (1979) → jQuery → Backbone → React → Signals. "Your screen is a projection of your data." 45 years and counting.</li><li><b>Data in → Transform → Data out</b> — Unix pipes (1973). MapReduce. Lambdas. <code>f(x) → y</code>. Functions all the way down.</li><li><b>Complexity is managed, never eliminated</b> — Brooks' No Silver Bullet (1986). New tools reduce accidental complexity. Essential complexity stays.</li><li><b>Abstractions leak</b> — Spolsky's Law (2002). Every abstraction hides details until it doesn't. You still need to know what's underneath.</li><li><b>Read → Think → Write</b> — The developer loop. vim in '91 or Cursor in '26 — understand, reason, express. Tools accelerate each step but eliminate none.</li></ol>`,
+      position: { x: 5, y: 20.604395604395606, width: 90, height: 75 },
       style: { fontSize: 28, textAlign: "left" },
       zIndex: 10,
     },
