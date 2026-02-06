@@ -268,8 +268,8 @@ export const TALK_KITES: KiteDef[] = [
     },
     {
       type: "text",
-      content: `<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linkedin/linkedin-original.svg" style="width:20px;height:20px;vertical-align:middle;display:inline-block;margin-right:6px">linkedin.com/in/georgekarametas`,
-      position: { x: 62, y: 68, width: 34, height: 8 },
+      content: `<div><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linkedin/linkedin-original.svg" width="20" height="20" style="vertical-align:middle;display:inline-block;margin-right:6px">linkedin.com/in/georgekarametas</div><div style="margin-top:8px"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" width="20" height="20" style="filter:invert(1);vertical-align:middle;display:inline-block;margin-right:6px">github.com/GeoDoo</div>`,
+      position: { x: 50, y: 63, width: 46, height: 16 },
       style: { fontSize: 30, textAlign: "center" },
       zIndex: 10,
     },
