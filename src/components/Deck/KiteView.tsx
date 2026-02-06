@@ -30,7 +30,7 @@ export function KiteView({ kite, index, isActive = false, theme, timerSeconds, t
   // Check if timer is enabled for this theme
   const hasTimer = theme.timer?.enabled;
   
-  // Reset attack state when slide becomes active (e.g., navigating back to it)
+  // Reset attack state when kite becomes active (e.g., navigating back to it)
   useEffect(() => {
     if (isActive) {
       setIsAttacked(false);
@@ -43,7 +43,7 @@ export function KiteView({ kite, index, isActive = false, theme, timerSeconds, t
     setIsAttacked(true);
   }, []);
 
-  // Reset attack state when moving to next slide
+  // Reset attack state when moving to next kite
   const handleZombieReset = useCallback(() => {
     setIsAttacked(false);
   }, []);

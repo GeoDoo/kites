@@ -1,57 +1,57 @@
 /**
  * Seed Talk Tests
- * Tests the REAL buildKites and TALK_SLIDES from the extracted data module.
+ * Tests the REAL buildKites and TALK_KITES from the extracted data module.
  * No re-implemented copies.
  */
 
 import { describe, it, expect } from "vitest";
-import { TALK_SLIDES, buildKites, type SlideDef } from "@/app/seed-talk/talk-data";
+import { TALK_KITES, buildKites, type KiteDef } from "@/app/seed-talk/talk-data";
 
-const VALID_BLOCK_TYPES = ["h1", "h2", "h3", "h4", "text"] as const;
+const VALID_BLOCK_TYPES = ["h1", "h2", "h3", "h4", "text", "image"] as const;
 
-describe("TALK_SLIDES data", () => {
-  it("every slide should have at least one block", () => {
-    TALK_SLIDES.forEach((slide, i) => {
-      expect(slide.blocks.length, `slide ${i + 1}`).toBeGreaterThan(0);
+describe("TALK_KITES data", () => {
+  it("every kite should have at least one block", () => {
+    TALK_KITES.forEach((kite, i) => {
+      expect(kite.blocks.length, `kite ${i + 1}`).toBeGreaterThan(0);
     });
   });
 
   it("every block should have non-empty content", () => {
-    TALK_SLIDES.forEach((slide, i) => {
-      slide.blocks.forEach((block, j) => {
-        expect(block.content.length, `slide ${i + 1} block ${j + 1}`).toBeGreaterThan(0);
+    TALK_KITES.forEach((kite, i) => {
+      kite.blocks.forEach((block, j) => {
+        expect(block.content.length, `kite ${i + 1} block ${j + 1}`).toBeGreaterThan(0);
       });
     });
   });
 
   it("every block should use a valid type", () => {
     const validTypes = new Set(VALID_BLOCK_TYPES);
-    TALK_SLIDES.forEach((slide, i) => {
-      slide.blocks.forEach((block, j) => {
-        expect(validTypes.has(block.type), `slide ${i + 1} block ${j + 1}: ${block.type}`).toBe(true);
+    TALK_KITES.forEach((kite, i) => {
+      kite.blocks.forEach((block, j) => {
+        expect(validTypes.has(block.type), `kite ${i + 1} block ${j + 1}: ${block.type}`).toBe(true);
       });
     });
   });
 
   it("every block position should be within 0-100 percentage range", () => {
-    TALK_SLIDES.forEach((slide, i) => {
-      slide.blocks.forEach((block, j) => {
+    TALK_KITES.forEach((kite, i) => {
+      kite.blocks.forEach((block, j) => {
         const p = block.position;
-        expect(p.x, `slide ${i + 1} block ${j + 1} x`).toBeGreaterThanOrEqual(0);
-        expect(p.x, `slide ${i + 1} block ${j + 1} x`).toBeLessThanOrEqual(100);
-        expect(p.y, `slide ${i + 1} block ${j + 1} y`).toBeGreaterThanOrEqual(0);
-        expect(p.y, `slide ${i + 1} block ${j + 1} y`).toBeLessThanOrEqual(100);
-        expect(p.width, `slide ${i + 1} block ${j + 1} width`).toBeGreaterThan(0);
-        expect(p.height, `slide ${i + 1} block ${j + 1} height`).toBeGreaterThan(0);
+        expect(p.x, `kite ${i + 1} block ${j + 1} x`).toBeGreaterThanOrEqual(0);
+        expect(p.x, `kite ${i + 1} block ${j + 1} x`).toBeLessThanOrEqual(100);
+        expect(p.y, `kite ${i + 1} block ${j + 1} y`).toBeGreaterThanOrEqual(0);
+        expect(p.y, `kite ${i + 1} block ${j + 1} y`).toBeLessThanOrEqual(100);
+        expect(p.width, `kite ${i + 1} block ${j + 1} width`).toBeGreaterThan(0);
+        expect(p.height, `kite ${i + 1} block ${j + 1} height`).toBeGreaterThan(0);
       });
     });
   });
 });
 
 describe("buildKites", () => {
-  it("should produce one kite per slide", () => {
+  it("should produce one kite per definition", () => {
     const kites = buildKites();
-    expect(kites).toHaveLength(TALK_SLIDES.length);
+    expect(kites).toHaveLength(TALK_KITES.length);
   });
 
   it("should assign unique ids to every kite", () => {
@@ -66,11 +66,11 @@ describe("buildKites", () => {
     expect(new Set(blockIds).size).toBe(blockIds.length);
   });
 
-  it("should preserve block content from slide definitions", () => {
+  it("should preserve block content from kite definitions", () => {
     const kites = buildKites();
-    // First slide title
+    // First kite title
     expect(kites[0].contentBlocks[0].content).toBe("Imagination vs. Reality");
-    // Last slide
+    // Last kite
     const last = kites[kites.length - 1];
     expect(last.contentBlocks[0].content).toBe("Thank You");
   });
@@ -84,8 +84,8 @@ describe("buildKites", () => {
     });
   });
 
-  it("should accept custom slides", () => {
-    const custom: SlideDef[] = [
+  it("should accept custom kite definitions", () => {
+    const custom: KiteDef[] = [
       { blocks: [{ type: "h1", content: "Custom", position: { x: 0, y: 0, width: 100, height: 100 } }] },
     ];
     const kites = buildKites(custom);
@@ -93,16 +93,16 @@ describe("buildKites", () => {
     expect(kites[0].contentBlocks[0].content).toBe("Custom");
   });
 
-  it("should default style to empty object when slide block has no style", () => {
-    const custom: SlideDef[] = [
+  it("should default style to empty object when kite block has no style", () => {
+    const custom: KiteDef[] = [
       { blocks: [{ type: "h1", content: "No style", position: { x: 0, y: 0, width: 100, height: 100 } }] },
     ];
     const kites = buildKites(custom);
     expect(kites[0].contentBlocks[0].style).toEqual({});
   });
 
-  it("should default zIndex to 10 when slide block has no zIndex", () => {
-    const custom: SlideDef[] = [
+  it("should default zIndex to 10 when kite block has no zIndex", () => {
+    const custom: KiteDef[] = [
       { blocks: [{ type: "h1", content: "Test", position: { x: 0, y: 0, width: 100, height: 100 } }] },
     ];
     const kites = buildKites(custom);

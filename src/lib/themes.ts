@@ -296,27 +296,34 @@ export function resolveKiteDurations(
   if (count === 0) return [];
 
   if (!isHybrid) {
-    const perKite = Math.floor(totalSeconds / count);
-    return kites.map(() => perKite);
+    const base = Math.floor(totalSeconds / count);
+    const extra = totalSeconds - base * count; // leftover seconds to distribute
+    return kites.map((_, i) => base + (i < extra ? 1 : 0));
   }
 
   // Hybrid: respect overrides, distribute remainder
   let allocated = 0;
-  let unsetCount = 0;
-  for (const kite of kites) {
+  const unsetIndices: number[] = [];
+  for (let i = 0; i < kites.length; i++) {
+    const kite = kites[i];
     if (kite.durationOverride != null && kite.durationOverride > 0) {
       allocated += kite.durationOverride;
     } else {
-      unsetCount++;
+      unsetIndices.push(i);
     }
   }
 
   const remaining = Math.max(0, totalSeconds - allocated);
-  const perUnset = unsetCount > 0 ? Math.floor(remaining / unsetCount) : 0;
+  const unsetCount = unsetIndices.length;
+  const base = unsetCount > 0 ? Math.floor(remaining / unsetCount) : 0;
+  const extra = unsetCount > 0 ? remaining - base * unsetCount : 0;
 
-  return kites.map((kite) =>
-    kite.durationOverride != null && kite.durationOverride > 0
-      ? kite.durationOverride
-      : perUnset
-  );
+  return kites.map((kite, i) => {
+    if (kite.durationOverride != null && kite.durationOverride > 0) {
+      return kite.durationOverride;
+    }
+    // Distribute leftover seconds across the first N unset kites
+    const unsetPos = unsetIndices.indexOf(i);
+    return base + (unsetPos < extra ? 1 : 0);
+  });
 }

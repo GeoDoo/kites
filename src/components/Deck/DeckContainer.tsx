@@ -62,7 +62,7 @@ export function DeckContainer({ className, onExit, timerStarted = true }: DeckCo
         behavior: "instant",
       });
       isInitialMount.current = false;
-      // Small delay to prevent flash of wrong slide
+      // Small delay to prevent flash of wrong kite
       requestAnimationFrame(() => {
         setIsReady(true);
       });

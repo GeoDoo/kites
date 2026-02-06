@@ -7,7 +7,7 @@
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface BlockDef {
-  type: "h1" | "h2" | "h3" | "h4" | "text";
+  type: "h1" | "h2" | "h3" | "h4" | "text" | "image";
   content: string;
   position: { x: number; y: number; width: number; height: number };
   style?: {
@@ -19,14 +19,14 @@ export interface BlockDef {
   zIndex?: number;
 }
 
-export interface SlideDef {
+export interface KiteDef {
   blocks: BlockDef[];
   speakerNotes?: string;
 }
 
 // ─── Layout helpers ──────────────────────────────────────────────────────────
 
-export function titleSlide(title: string, subtitle: string, footer: string): SlideDef {
+export function titleKite(title: string, subtitle: string, footer: string): KiteDef {
   const blocks: BlockDef[] = [
     {
       type: "h1",
@@ -55,7 +55,7 @@ export function titleSlide(title: string, subtitle: string, footer: string): Sli
   return { blocks };
 }
 
-export function quoteSlide(quote: string, attribution: string): SlideDef {
+export function quoteKite(quote: string, attribution: string): KiteDef {
   return {
     blocks: [
       {
@@ -76,7 +76,7 @@ export function quoteSlide(quote: string, attribution: string): SlideDef {
   };
 }
 
-export function bigStatement(text: string, fontSize: number = 56): SlideDef {
+export function bigStatement(text: string, fontSize: number = 56): KiteDef {
   return {
     blocks: [
       {
@@ -90,7 +90,7 @@ export function bigStatement(text: string, fontSize: number = 56): SlideDef {
   };
 }
 
-export function sectionBreak(text: string): SlideDef {
+export function sectionBreak(text: string): KiteDef {
   return {
     blocks: [
       {
@@ -104,7 +104,7 @@ export function sectionBreak(text: string): SlideDef {
   };
 }
 
-export function contentSlide(heading: string, body: string): SlideDef {
+export function contentKite(heading: string, body: string): KiteDef {
   return {
     blocks: [
       {
@@ -125,7 +125,7 @@ export function contentSlide(heading: string, body: string): SlideDef {
   };
 }
 
-export function statementSub(statement: string, sub: string, statementSize: number = 48): SlideDef {
+export function statementSub(statement: string, sub: string, statementSize: number = 48): KiteDef {
   return {
     blocks: [
       {
@@ -146,7 +146,7 @@ export function statementSub(statement: string, sub: string, statementSize: numb
   };
 }
 
-export function scenarioTitle(label: string, description: string): SlideDef {
+export function scenarioTitle(label: string, description: string): KiteDef {
   return {
     blocks: [
       {
@@ -167,7 +167,7 @@ export function scenarioTitle(label: string, description: string): SlideDef {
   };
 }
 
-export function contentWithPunchline(heading: string, body: string, punchline: string): SlideDef {
+export function contentWithPunchline(heading: string, body: string, punchline: string): KiteDef {
   return {
     blocks: [
       {
@@ -216,17 +216,55 @@ export function i(text: string): string {
   return `<i>${text}</i>`;
 }
 
-// ─── All 48 slides ───────────────────────────────────────────────────────────
+// ─── All kites ───────────────────────────────────────────────────────────────
 
-export const TALK_SLIDES: SlideDef[] = [
-  titleSlide("Imagination vs. Reality", "A Survivor's Guide to AI Hype", "JSMonthly | 2026"),
-  contentSlide("&ldquo;Will AI take my job?&rdquo;", `Possible scenarios${br2}Every possible angle${br2}One hopeful answer`),
+export const TALK_KITES: KiteDef[] = [
+  titleKite("Imagination vs. Reality", "A Survivor's Guide to AI Hype", "JSMonthly | 2026"),
+
+  // Bio kite
+  {
+    blocks: [
+      {
+        type: "h2",
+        content: "Georgios Karametas",
+        position: { x: 5, y: 5, width: 55, height: 12 },
+        style: { fontSize: 44, fontWeight: "bold", textAlign: "left" },
+        zIndex: 10,
+      },
+      {
+        type: "text",
+        content: [
+          "Engineering Manager &mdash; FE &amp; BE",
+          "15+ years in software engineering",
+          "MBA &mdash; Imperial College London",
+        ].join(br),
+        position: { x: 5, y: 22, width: 55, height: 55 },
+        style: { fontSize: 26, textAlign: "left" },
+        zIndex: 10,
+      },
+      {
+        type: "image",
+        content: "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https%3A%2F%2Fwww.linkedin.com%2Fin%2Fgeorgekarametas%2F",
+        position: { x: 65, y: 15, width: 28, height: 50 },
+        zIndex: 10,
+      },
+      {
+        type: "text",
+        content: `<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linkedin/linkedin-original.svg" style="width:20px;height:20px;vertical-align:middle;display:inline-block;margin-right:6px" />linkedin.com/in/georgekarametas`,
+        position: { x: 62, y: 68, width: 34, height: 8 },
+        style: { fontSize: 18, textAlign: "center" },
+        zIndex: 10,
+      },
+    ],
+  },
+
+  contentKite("&ldquo;Will AI take my job?&rdquo;", `Possible scenarios${br2}Every possible angle${br2}One hopeful answer`),
   contentWithPunchline(
     "My Credentials (for Surviving Hype)",
     ["jQuery 1.4 (2010)", "Angular &rarr; React &rarr; Vue", "SPAs &rarr; SSR &rarr; Server Components", "Monoliths &rarr; Microservices &rarr; Monoliths", "2008 crash. Pandemic. Crypto. Now AI."].join(br2),
     "Still here."
   ),
-  contentSlide("The Hype Cycles", ul(
+  contentKite("The Hype Cycles", ul(
     `${b("2010")} &mdash; jQuery &mdash; ${i("&ldquo;Learn this or die&rdquo;")}`,
     `${b("2012")} &mdash; Angular &mdash; ${i("&ldquo;MVC in the browser!&rdquo;")}`,
     `${b("2015")} &mdash; React &mdash; ${i("&ldquo;Everything is components&rdquo;")}`,
@@ -235,14 +273,14 @@ export const TALK_SLIDES: SlideDef[] = [
     `${b("2022")} &mdash; Web3 &mdash; ${i("&ldquo;Learn Solidity or be left behind&rdquo;")}`,
     `${b("2024")} &mdash; AI &mdash; ${i("&ldquo;Engineers are dead&rdquo;")}`
   )),
-  contentSlide("The World Events", ul(
+  contentKite("The World Events", ul(
     `${b("2008")} &mdash; Financial crisis &mdash; ${i("&ldquo;Is tech safe?&rdquo;")}`,
     `${b("2020")} &mdash; Pandemic &mdash; ${i("&ldquo;Is remote forever?&rdquo;")}`,
     `${b("2022")} &mdash; Crypto crash &mdash; ${i("&ldquo;Web3 was the future&rdquo;")}`,
     `${b("2024")} &mdash; AI hype &mdash; ${i("Sound familiar?")}`
   )),
   statementSub(`Four existential threats.${br}15 years.`, `${b("I'm still here. So are you.")}`, 44),
-  contentSlide("What Actually Stayed Constant", ul("Server &harr; Client", "Request &rarr; Response", "State &rarr; UI", "A human decides what to build")),
+  contentKite("What Actually Stayed Constant", ul("Server &harr; Client", "Request &rarr; Response", "State &rarr; UI", "A human decides what to build")),
   sectionBreak("Let's explore the scenarios."),
 
   // ── Scenario 1 ──────────────────────────────────────────────────────────────
@@ -306,32 +344,32 @@ export const TALK_SLIDES: SlideDef[] = [
   statementSub("The Laziness Trap", `Are you outsourcing ${i("typing")}? &rarr; Fine.${br2}Are you outsourcing ${i("thinking")}? &rarr; Dangerous.`),
   statementSub("The Creator's Ceiling", `Can a creation surpass its creator?${br2}Yes &mdash; but only in ${i("narrow dimensions")}.`),
   contentWithPunchline("The Line", `A calculator is better at arithmetic.${br}It can't decide what's worth calculating.`, `AI can write code faster than you.${br}It can't decide if the code should exist.`),
-  contentSlide("The Paradox of Code", `AI makes code ${b("abundant")}.${br2}But more code = more cost:${br2}${ul("Maintenance", "Bugs", "Complexity", "Security surface", "Coordination overhead")}`),
-  contentSlide("The Mastery Flip", `Mastery has always been about writing ${b("less")}.${br2}The elegant solution.${br}The right abstraction.${br}Knowing when to say no.`),
+  contentKite("The Paradox of Code", `AI makes code ${b("abundant")}.${br2}But more code = more cost:${br2}${ul("Maintenance", "Bugs", "Complexity", "Security surface", "Coordination overhead")}`),
+  contentKite("The Mastery Flip", `Mastery has always been about writing ${b("less")}.${br2}The elegant solution.${br}The right abstraction.${br}Knowing when to say no.`),
   bigStatement(`&ldquo;AI makes code free to write${br}and expensive to keep.&rdquo;`, 48),
   sectionBreak("What actually matters."),
   contentWithPunchline("The Fundamentals", ul("Systems thinking", "Problem decomposition", "Debugging", "Simplification"), "These compound. Frameworks don't."),
   contentWithPunchline("The Human Skills", ul("Judgment", "Communication", "Connection"), "AI can't attend your stakeholder meeting."),
-  contentSlide("The Strategy", ol("Be the curator, not the generator", "Stay close to the problem", "Use AI aggressively", "Know when to override")),
+  contentKite("The Strategy", ol("Be the curator, not the generator", "Stay close to the problem", "Use AI aggressively", "Know when to override")),
   sectionBreak("The close."),
   statementSub("The Meteorite", `What if AI really does change everything?${br2}What do you do?`),
-  quoteSlide("Never let the future disturb you. You will meet it with the same weapons of reason which today arm you against the present.", "Marcus Aurelius"),
-  quoteSlide("Make the best use of what is in your power, and take the rest as it happens.", "Epictetus"),
-  contentSlide("Focus", `You can't control AI progress.${br2}You can control:${br2}${ul("Your skills", "Your adaptability", "Your fundamentals")}`),
+  quoteKite("Never let the future disturb you. You will meet it with the same weapons of reason which today arm you against the present.", "Marcus Aurelius"),
+  quoteKite("Make the best use of what is in your power, and take the rest as it happens.", "Epictetus"),
+  contentKite("Focus", `You can't control AI progress.${br2}You can control:${br2}${ul("Your skills", "Your adaptability", "Your fundamentals")}`),
   contentWithPunchline("The Job", `You can't control whether AI changes everything.${br2}You ${i("can")} control whether you're the kind of person who adapts.`, "That's always been the job. It still is."),
-  quoteSlide("We suffer more often in imagination than in reality.", "Seneca"),
+  quoteKite("We suffer more often in imagination than in reality.", "Seneca"),
   bigStatement("Everything will be alright.", 60),
-  titleSlide("Thank You", "Questions?", ""),
+  titleKite("Thank You", "Questions?", ""),
 ];
 
-// ─── Convert slide definitions to Kite objects ───────────────────────────────
+// ─── Convert kite definitions to Kite objects ───────────────────────────────
 
-export function buildKites(slides: SlideDef[] = TALK_SLIDES) {
+export function buildKites(kiteDefs: KiteDef[] = TALK_KITES) {
   const now = new Date().toISOString();
 
-  return slides.map((slide) => ({
+  return kiteDefs.map((def) => ({
     id: crypto.randomUUID(),
-    contentBlocks: slide.blocks.map((block) => ({
+    contentBlocks: def.blocks.map((block) => ({
       id: crypto.randomUUID(),
       type: block.type,
       position: block.position,
@@ -339,7 +377,7 @@ export function buildKites(slides: SlideDef[] = TALK_SLIDES) {
       style: block.style ?? {},
       zIndex: block.zIndex ?? 10,
     })),
-    speakerNotes: slide.speakerNotes,
+    speakerNotes: def.speakerNotes,
     createdAt: now,
     updatedAt: now,
   }));

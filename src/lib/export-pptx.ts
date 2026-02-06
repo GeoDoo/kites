@@ -48,7 +48,7 @@ export async function exportToPPTX(
   pptx.title = title;
   pptx.subject = "Presentation created with Kites";
   
-  // Set slide size to 16:9
+  // Set kite size to 16:9
   pptx.defineLayout({ name: "LAYOUT_16x9", width: 10, height: 5.625 });
   pptx.layout = "LAYOUT_16x9";
 
@@ -61,7 +61,7 @@ export async function exportToPPTX(
     // Resolve per-kite theme (handles Hybrid mode)
     const kiteTheme = resolveThemeForKite(themeId, kite.themeOverride);
 
-    // Create slide
+    // Create PPTX slide for this kite
     const slide = pptx.addSlide();
     
     // Capture background as screenshot (preserves all CSS effects)
@@ -75,7 +75,7 @@ export async function exportToPPTX(
       slide.background = { color: kiteTheme.colors.background.replace("#", "") };
     }
 
-    // Sort blocks by zIndex and add to slide as editable text
+    // Sort blocks by zIndex and add to PPTX slide as editable text
     const sortedBlocks = [...kite.contentBlocks].sort(
       (a, b) => (a.zIndex || 0) - (b.zIndex || 0)
     );
@@ -201,7 +201,7 @@ async function captureBackgroundAsImage(
 }
 
 /**
- * Add a content block to a PowerPoint slide
+ * Add a content block to a PowerPoint PPTX slide
  */
 function addBlockToSlide(
   slide: PptxGenJS.Slide,
@@ -210,7 +210,7 @@ function addBlockToSlide(
 ): void {
   const { type, position, content, style } = block;
   
-  // Convert percentage positions to inches (slide is 10" x 5.625")
+  // Convert percentage positions to inches (PPTX slide is 10" x 5.625")
   const x = (position.x / 100) * 10;
   const y = (position.y / 100) * 5.625;
   const w = (position.width / 100) * 10;

@@ -13,13 +13,13 @@ interface PresentationTimerProps {
 /**
  * PresentationTimer Component
  * Simple countdown timer for presentation mode
- * Shows time remaining per slide
+ * Shows time remaining per kite
  */
 export function PresentationTimer({ timerSeconds, isActive, theme }: PresentationTimerProps) {
   const [timeLeft, setTimeLeft] = useState(timerSeconds);
   const [isExpired, setIsExpired] = useState(false);
 
-  // Reset when slide becomes active
+  // Reset when kite becomes active
   useEffect(() => {
     if (isActive) {
       setTimeLeft(timerSeconds);

@@ -12,17 +12,27 @@ import {
 let saveTimeout: NodeJS.Timeout | null = null;
 const SAVE_DELAY = 300; // ms - save quickly after changes
 
-// Force immediate save (used before page unload)
-let pendingSaveData: { kites: Kite[]; currentKiteIndex: number; currentTheme: string; title: string; totalDurationMinutes: number } | null = null;
+type SavePayload = { kites: Kite[]; currentKiteIndex: number; currentTheme: string; title: string; totalDurationMinutes: number };
 
-async function saveToAPI(data: { kites: Kite[]; currentKiteIndex: number; currentTheme: string; title: string; totalDurationMinutes: number }) {
+// Always holds the latest unsaved data — only cleared after a successful save
+let pendingSaveData: SavePayload | null = null;
+
+async function saveToAPI(data: SavePayload) {
   try {
     const response = await fetch("/api/kites", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (!response.ok) {
+    if (response.ok) {
+      // Only clear pending data if this save was for the latest version
+      // (a newer debouncedSave may have arrived while this fetch was in-flight)
+      if (pendingSaveData === data) {
+        pendingSaveData = null;
+      }
+      // If live sync toggle is on, write back to talk-data.ts source
+      syncToSourceIfEnabled(data.kites);
+    } else {
       console.error("Save failed with status:", response.status);
     }
   } catch (error) {
@@ -30,22 +40,47 @@ async function saveToAPI(data: { kites: Kite[]; currentKiteIndex: number; curren
   }
 }
 
-function debouncedSave(data: { kites: Kite[]; currentKiteIndex: number; currentTheme: string; title: string; totalDurationMinutes: number }) {
-  pendingSaveData = data; // Track pending save
+/** Fire-and-forget sync to talk-data.ts when the localStorage toggle is on */
+function syncToSourceIfEnabled(kites: Kite[]) {
+  try {
+    if (typeof window === "undefined") return;
+    if (localStorage.getItem("kites-sync-to-source") !== "true") return;
+    fetch("/api/sync-talk-data", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kites }),
+    }).catch(() => {
+      // Silent — this is a dev convenience, not critical
+    });
+  } catch {
+    // localStorage may throw in some contexts
+  }
+}
+
+function debouncedSave(data: SavePayload) {
+  pendingSaveData = data;
   if (saveTimeout) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
     saveToAPI(data);
-    pendingSaveData = null;
   }, SAVE_DELAY);
 }
 
-// Save immediately before page unload
+// Flush pending save before page unload / tab switch
 if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => {
+  const flushSave = () => {
     if (pendingSaveData) {
-      // Use sendBeacon for reliable save on page unload
       const blob = new Blob([JSON.stringify(pendingSaveData)], { type: 'application/json' });
       navigator.sendBeacon('/api/kites', blob);
+      pendingSaveData = null;
+    }
+  };
+
+  window.addEventListener('beforeunload', flushSave);
+
+  // Also flush when the tab becomes hidden (covers navigation, tab switch, app switch)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      flushSave();
     }
   });
 }
@@ -476,7 +511,7 @@ export const useKitesStore = create<KitesState>()(
           return duplicate.id;
         },
 
-        // Layer actions - all z-indexes must be >= 1 to stay above slide background
+        // Layer actions - all z-indexes must be >= 1 to stay above kite background
         bringToFront: (blockId) => {
           set((state) => {
             const kite = state.kites[state.currentKiteIndex];

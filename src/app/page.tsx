@@ -48,7 +48,7 @@ function PresentationView({ onExit, timerStarted }: PresentationViewProps) {
         Exit (Esc)
       </button>
 
-      {/* Slide counter */}
+      {/* Kite counter */}
       {kites.length > 1 && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-slate-900/50 text-white backdrop-blur-sm text-sm font-medium">
           {currentKiteIndex + 1} / {kites.length}
@@ -81,8 +81,8 @@ export default function Home() {
   const presenterWindowRef = useRef<Window | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Calculate timer per slide
-  const timerPerSlide = theme.timer?.totalTalkMinutes
+  // Calculate timer per kite
+  const timerPerKite = theme.timer?.totalTalkMinutes
     ? Math.floor((theme.timer.totalTalkMinutes * 60) / kites.length)
     : 60;
 
@@ -104,11 +104,11 @@ export default function Home() {
   // Timer countdown logic for presenter mode
   useEffect(() => {
     if (!isPresenterMode || !timerStarted) {
-      setTimerValue(timerPerSlide);
+      setTimerValue(timerPerKite);
       return;
     }
 
-    setTimerValue(timerPerSlide);
+    setTimerValue(timerPerKite);
     
     timerIntervalRef.current = setInterval(() => {
       setTimerValue(prev => {
@@ -122,9 +122,9 @@ export default function Home() {
         clearInterval(timerIntervalRef.current);
       }
     };
-  }, [isPresenterMode, timerStarted, currentKiteIndex, timerPerSlide]);
+  }, [isPresenterMode, timerStarted, currentKiteIndex, timerPerKite]);
 
-  // Update presenter window when slide changes or timer updates
+  // Update presenter window when kite changes or timer updates
   useEffect(() => {
     const popup = presenterWindowRef.current;
     if (!popup || popup.closed) return;
@@ -133,18 +133,18 @@ export default function Home() {
       const currentKite = kites[currentKiteIndex];
       const notes = currentKite?.speakerNotes || "";
       
-      const slideEl = popup.document.getElementById("slide");
+      const kiteEl = popup.document.getElementById("kite-num");
       const totalEl = popup.document.getElementById("total");
       const notesEl = popup.document.getElementById("notes");
       const timerEl = popup.document.getElementById("timer");
       const startBtn = popup.document.getElementById("startBtn");
 
-      if (slideEl) slideEl.textContent = `Slide ${currentKiteIndex + 1}`;
+      if (kiteEl) kiteEl.textContent = `Kite ${currentKiteIndex + 1}`;
       if (totalEl) totalEl.textContent = `of ${kites.length}`;
       if (notesEl) {
         notesEl.innerHTML = notes 
           ? notes.replace(/</g, '&lt;').replace(/>/g, '&gt;')
-          : '<em style="color:#666">No speaker notes for this slide.</em>';
+          : '<em style="color:#666">No speaker notes for this kite.</em>';
       }
       
       // Update timer display
@@ -158,7 +158,7 @@ export default function Home() {
           const color = timerValue === 0 ? '#ef4444' : isUrgent ? '#f97316' : isWarning ? '#eab308' : '#22c55e';
           timerEl.innerHTML = `<span style="color:${color};font-size:32px;font-weight:bold">${timerValue === 0 ? "⏰ TIME'S UP!" : timeStr}</span>`;
         } else {
-          timerEl.innerHTML = `<span style="color:#888;font-size:24px">Timer: ${Math.floor(timerPerSlide / 60)}:${(timerPerSlide % 60).toString().padStart(2, '0')} per slide</span>`;
+          timerEl.innerHTML = `<span style="color:#888;font-size:24px">Timer: ${Math.floor(timerPerKite / 60)}:${(timerPerKite % 60).toString().padStart(2, '0')} per kite</span>`;
         }
       }
 
@@ -169,7 +169,7 @@ export default function Home() {
     } catch {
       // Window might be closed
     }
-  }, [currentKiteIndex, kites, timerStarted, timerValue, timerPerSlide]);
+  }, [currentKiteIndex, kites, timerStarted, timerValue, timerPerKite]);
 
   // Open presenter window (PiP or popup)
   const openPresenterWindow = useCallback(async () => {
@@ -177,7 +177,7 @@ export default function Home() {
     const notes = currentKite?.speakerNotes || "";
     const notesHtml = notes 
       ? notes.replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      : '<em style="color:#666">No speaker notes for this slide.</em>';
+      : '<em style="color:#666">No speaker notes for this kite.</em>';
 
     let popup: Window | null = null;
 
@@ -209,8 +209,8 @@ export default function Home() {
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:system-ui,-apple-system,sans-serif;background:#1a1a2e;color:#fff;padding:16px;height:100vh;display:flex;flex-direction:column}
 .header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #333;padding-bottom:10px;margin-bottom:12px}
-.slide-info{display:flex;flex-direction:column}
-.slide{font-size:24px;font-weight:bold;color:#f59e0b}
+.kite-info{display:flex;flex-direction:column}
+.kite-num{font-size:24px;font-weight:bold;color:#f59e0b}
 .total{font-size:12px;color:#888}
 .timer-section{text-align:center;padding:12px;background:#252545;border-radius:8px;margin-bottom:12px}
 .start-btn{background:#22c55e;color:white;border:none;padding:12px 24px;font-size:18px;font-weight:bold;border-radius:8px;cursor:pointer;margin-top:8px}
@@ -219,13 +219,13 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#1a1a2e;color:#ff
 .notes{flex:1;overflow-y:auto;font-size:16px;line-height:1.5;color:#e0e0e0;white-space:pre-wrap}
 </style></head><body>
 <div class="header">
-<div class="slide-info">
-<div class="slide" id="slide">Slide ${currentKiteIndex + 1}</div>
+<div class="kite-info">
+<div class="kite-num" id="kite-num">Kite ${currentKiteIndex + 1}</div>
 <div class="total" id="total">of ${kites.length}</div>
 </div>
 </div>
 <div class="timer-section">
-<div id="timer"><span style="color:#888;font-size:24px">Timer: ${Math.floor(timerPerSlide / 60)}:${(timerPerSlide % 60).toString().padStart(2, '0')} per slide</span></div>
+<div id="timer"><span style="color:#888;font-size:24px">Timer: ${Math.floor(timerPerKite / 60)}:${(timerPerKite % 60).toString().padStart(2, '0')} per kite</span></div>
 <button id="startBtn" class="start-btn" onclick="window.opener.__kitesStartTimer && window.opener.__kitesStartTimer()">▶️ START TIMER</button>
 </div>
 <div class="label">📝 SPEAKER NOTES</div>
@@ -234,7 +234,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#1a1a2e;color:#ff
     popup.document.close();
 
     return popup;
-  }, [kites, currentKiteIndex, timerPerSlide]);
+  }, [kites, currentKiteIndex, timerPerKite]);
 
   // Enter presentation mode - opens presenter window FIRST, then fullscreen
   const enterPresentMode = useCallback(async (withPresenterView: boolean) => {

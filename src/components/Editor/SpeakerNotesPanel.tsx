@@ -101,7 +101,7 @@ export function SpeakerNotesPanel() {
             ref={textareaRef}
             value={localNotes}
             onChange={(e) => handleNotesChange(e.target.value)}
-            placeholder="Add notes for this slide... (only you can see these during presentation)"
+            placeholder="Add notes for this kite... (only you can see these during presentation)"
             className={cn(
               "w-full min-h-[80px] max-h-[200px] p-3 rounded-lg",
               "border border-sky-200 focus:border-sky-400 focus:ring-1 focus:ring-sky-400",

@@ -1,17 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { buildKites } from "./talk-data";
+
+const SYNC_KEY = "kites-sync-to-source";
 
 // ─── Page Component ──────────────────────────────────────────────────────────
 
 export default function SeedTalkPage() {
   const [status, setStatus] = useState<string>("");
   const [generating, setGenerating] = useState(false);
+  const [syncEnabled, setSyncEnabled] = useState(false);
+
+  // Hydrate toggle from localStorage
+  useEffect(() => {
+    setSyncEnabled(localStorage.getItem(SYNC_KEY) === "true");
+  }, []);
+
+  const toggleSync = () => {
+    const next = !syncEnabled;
+    setSyncEnabled(next);
+    localStorage.setItem(SYNC_KEY, next ? "true" : "false");
+  };
 
   const seedDeck = async () => {
     setGenerating(true);
-    setStatus("Building 48 slides...");
+    setStatus("Building kites...");
 
     const kites = buildKites();
 
@@ -29,7 +43,7 @@ export default function SeedTalkPage() {
       });
 
       if (response.ok) {
-        setStatus(`Done! ${kites.length} slides created.`);
+        setStatus(`Done! ${kites.length} kites created.`);
         setGenerating(false);
       } else {
         setStatus("Failed to save. Check console.");
@@ -49,7 +63,7 @@ export default function SeedTalkPage() {
           <p className="text-gray-400">
             Imagination vs. Reality: A Survivor&apos;s Guide to AI Hype
           </p>
-          <p className="text-gray-500 text-sm mt-1">48 slides, ready to present</p>
+          <p className="text-gray-500 text-sm mt-1">Ready to present</p>
         </div>
 
         <button
@@ -67,6 +81,32 @@ export default function SeedTalkPage() {
         {status && (
           <p className="text-yellow-400 text-sm animate-pulse">{status}</p>
         )}
+
+        {/* Live sync toggle */}
+        <div className="flex items-center justify-center gap-3">
+          <button
+            onClick={toggleSync}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              syncEnabled ? "bg-green-500" : "bg-gray-600"
+            }`}
+            role="switch"
+            aria-checked={syncEnabled}
+          >
+            <span
+              className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
+                syncEnabled ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+          <div className="text-left">
+            <p className={`text-sm font-medium ${syncEnabled ? "text-green-400" : "text-gray-400"}`}>
+              Live sync edits to seed data
+            </p>
+            <p className="text-gray-600 text-xs">
+              When ON, editor changes are written back to talk-data.ts automatically
+            </p>
+          </div>
+        </div>
 
         <div className="text-gray-600 text-xs space-y-1">
           <p>This will replace any existing deck.</p>

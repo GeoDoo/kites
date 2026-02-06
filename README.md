@@ -6,7 +6,7 @@ Competitor to Pitch/Tome with a focus on smooth animations and delightful UX.
 
 ## Core Concepts
 
-- **Kites** — Our name for slides. Each kite is a canvas you can fill with content.
+- **Kites** — Each kite is a canvas you can fill with content.
 - **Content Blocks** — Headings, text, and images that you drag and position freely.
 - **Sky Theme** — Light blues, whites, and airy grays for a fresh, modern feel.
 
@@ -80,13 +80,13 @@ src/
 ├── components/
 │   ├── Deck/
 │   │   ├── DeckContainer.tsx   # Presentation mode
-│   │   └── SlideView.tsx       # Single kite renderer
+│   │   └── KiteView.tsx        # Single kite renderer
 │   └── Editor/
 │       ├── CanvasElement.tsx   # Draggable content block
 │       ├── EditorLayout.tsx    # Main layout
 │       ├── ElementToolbar.tsx  # Add content toolbar
-│       ├── SlideCanvas.tsx     # Interactive canvas
-│       ├── SlideList.tsx       # Kite thumbnails
+│       ├── KiteCanvas.tsx      # Interactive canvas
+│       ├── KiteList.tsx        # Kite thumbnails
 │       └── AlignmentGuides.tsx # Snap guides
 └── lib/
     ├── store.ts         # Zustand store (kites, blocks)

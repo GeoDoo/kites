@@ -117,7 +117,7 @@ export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset
   const [attackType, setAttackType] = useState<AttackType>("scratch");
   const [isReady, setIsReady] = useState(false);
   
-  // Generate randomized horde when slide becomes active
+  // Generate randomized horde when kite becomes active
   const hordeConfig = useMemo(() => generateHorde(12), [hordeKey]); // 12 zombies from all angles
   
   // Track positions for each zombie { x, y }
@@ -126,14 +126,14 @@ export function ZombieAttack({ config, timerSeconds, isActive, onAttack, onReset
   // Calculate base speed - zombies need to travel their distance in timerSeconds
   const totalUpdates = timerSeconds * 10;
 
-  // Reset state when slide becomes active - randomly select attack type
+  // Reset state when kite becomes active - randomly select attack type
   useEffect(() => {
     if (isActive) {
       setIsReady(false); // Hide zombies during transition
       setTimeLeft(timerSeconds);
       setIsAttacking(false);
       setHordeKey(prev => prev + 1);
-      // Randomly select attack type for this slide
+      // Randomly select attack type for this kite
       setAttackType(ATTACK_TYPES[Math.floor(Math.random() * ATTACK_TYPES.length)]);
     } else {
       setIsReady(false); // Hide when not active
