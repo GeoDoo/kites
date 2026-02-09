@@ -255,7 +255,7 @@ export const TALK_KITES: KiteDef[] = [
     },
     {
       type: "text",
-      content: `Engineering Manager — FE &amp; BE<br>15+ years in software engineering<br>MBA — Imperial Business School, London`,
+      content: `Engineering Manager — FE &amp; BE<br>15+ years in software engineering across Greece, Italy and UK in 3 different languages!<br>MBA — Imperial Business School, London`,
       position: { x: 5.309066763250033, y: 19.871794871794872, width: 55, height: 55 },
       style: { fontSize: 34, textAlign: "left" },
       zIndex: 10,
@@ -340,7 +340,7 @@ export const TALK_KITES: KiteDef[] = [
     blocks: [
     {
       type: "h2",
-      content: `4 existential threats...<div>20 disasters...<br>15+ years of egineering experience, and...<div>1002 failed applications later...</div></div>`,
+      content: `4 existential threats...<div>20 disasters...<br>15+ years of engineering experience, and...<div>1002 failed applications later...</div></div>`,
       position: { x: 5, y: 14, width: 90, height: 28.95970695970696 },
       style: { fontSize: 44, fontWeight: "bold", textAlign: "center" },
       zIndex: 13,
@@ -389,7 +389,7 @@ export const TALK_KITES: KiteDef[] = [
     blocks: [
     {
       type: "h1",
-      content: `Let's explore the scenarios.`,
+      content: `Let's explore some scenarios.`,
       position: { x: 10, y: 32, width: 80, height: 28 },
       style: { fontSize: 52, fontWeight: "bold", textAlign: "center" },
       zIndex: 10,
