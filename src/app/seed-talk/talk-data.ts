@@ -304,7 +304,7 @@ export const TALK_KITES: KiteDef[] = [
     },
     {
       type: "text",
-      content: `<table> <tbody><tr><td><b>Year</b></td><td><b>Tech Hype</b></td><td><b>World</b></td><td><b>Me</b></td></tr> <tr><td><b>2010</b></td><td>jQuery dominance</td><td>Post-crisis recovery</td><td>Paying off family debt. No phone. Started learning to code</td></tr> <tr><td><b>2011</b></td><td>Node.js gains traction</td><td>—</td><td>Motorcycle crash — nearly died. First €30 from coding</td></tr> <tr><td><b>2012</b></td><td>AngularJS — <i>"MVC in the browser"</i></td><td>Facebook IPO flops</td><td>Finished BA (started 1998!)</td></tr> <tr><td><b>2013</b></td><td>React released. NoSQL peak</td><td>Snowden. EU debt crisis, GrEXit</td><td>Made redundant. Co-founded Fort Security. New job</td></tr> <tr><td><b>2015</b></td><td>React mainstream. GraphQL</td><td>—</td><td>Working toward Senior FE. Met love of my life</td></tr> <tr><td><b>2017</b></td><td>Microservices peak</td><td>Bitcoin $20K</td><td>Engaged! Moved to Treviso, Italy</td></tr> <tr><td><b>2018</b></td><td>Serverless peak. GraphQL peak</td><td>Crypto crash. GDPR</td><td>Remote job. Crypto wallet project. Senior FE</td></tr> <tr><td><b>2019</b></td><td>JAMstack hype</td><td>—</td><td>London! VIOOH. Got married!</td></tr> <tr><td><b>2020</b></td><td>SSR returns (Next.js)</td><td>COVID-19. Brexit</td><td>Pandemic + Brexit at the same time</td></tr> <tr><td><b>2021</b></td><td>Web3/NFT peak ($17B)</td><td>Great Resignation</td><td>Left → Tech Lead → back to VIOOH as Tech Lead</td></tr> <tr><td><b>2022</b></td><td>Web3 crash. ChatGPT (Nov)</td><td>War. Inflation. FTX. Layoffs</td><td>—</td></tr> <tr><td><b>2023</b></td><td>AI explosion — GPT-4, Claude</td><td>167K layoffs. SVB</td><td>Engineering Manager</td></tr> <tr><td><b>2024</b></td><td>AI agents — <i>"Engineers are dead"</i></td><td>Continued layoffs</td><td>—</td></tr> <tr><td><b>2025</b></td><td>42% return to monoliths</td><td>127K+ tech layoffs</td><td>Working towards HoE</td></tr> <tr><td><b>2026</b></td><td>AI everywhere — <i>"Now what?"</i></td><td>Epstein files!!</td><td><b>This talk</b></td></tr></tbody></table>`,
+      content: `<table> <tbody><tr><td><b>Year</b></td><td><b>Tech Hype</b></td><td><b>World</b></td><td><b>Me</b></td></tr> <tr><td><b>2010</b></td><td>jQuery dominance</td><td>Post-crisis recovery</td><td>Paying off family debt. No phone. Started learning to code</td></tr> <tr><td><b>2011</b></td><td>Node.js gains traction</td><td>—</td><td>Motorcycle crash — nearly died. First €30 from coding</td></tr> <tr><td><b>2012</b></td><td>AngularJS — <i>"MVC in the browser"</i></td><td>Facebook IPO flops</td><td>Finished BA (started 1998!)</td></tr> <tr><td><b>2013</b></td><td>React released. NoSQL peak</td><td>Snowden. EU debt crisis, GrEXit</td><td>Made redundant. Co-founded Fort Security. New job</td></tr> <tr><td><b>2015</b></td><td>React mainstream. GraphQL</td><td>—</td><td>Working toward Senior FE. Met love of my life. Capital controls</td></tr> <tr><td><b>2017</b></td><td>Microservices peak</td><td>Bitcoin $20K</td><td>Engaged! Moved to Treviso, Italy</td></tr> <tr><td><b>2018</b></td><td>Serverless peak. GraphQL peak</td><td>Crypto crash. GDPR</td><td>Remote job. Crypto wallet project. Senior FE</td></tr> <tr><td><b>2019</b></td><td>JAMstack hype</td><td>—</td><td>London! VIOOH. Got married!</td></tr> <tr><td><b>2020</b></td><td>SSR returns (Next.js)</td><td>COVID-19. Brexit</td><td>Pandemic + Brexit at the same time</td></tr> <tr><td><b>2021</b></td><td>Web3/NFT peak ($17B)</td><td>Great Resignation</td><td>Left → Tech Lead → back to VIOOH as Tech Lead</td></tr> <tr><td><b>2022</b></td><td>Web3 crash. ChatGPT (Nov)</td><td>War. Inflation. FTX. Layoffs</td><td>—</td></tr> <tr><td><b>2023</b></td><td>AI explosion — GPT-4, Claude</td><td>167K layoffs. SVB</td><td>Engineering Manager</td></tr> <tr><td><b>2024</b></td><td>AI agents — <i>"Engineers are dead"</i></td><td>Continued layoffs</td><td>—</td></tr> <tr><td><b>2025</b></td><td>42% return to monoliths</td><td>127K+ tech layoffs</td><td>Working towards HoE</td></tr> <tr><td><b>2026</b></td><td>AI everywhere — <i>"Now what?"</i></td><td>Epstein files!!</td><td><b>This talk</b></td></tr></tbody></table>`,
       position: { x: 5.35715722966719, y: 15.84249084249084, width: 90, height: 75 },
       style: { fontSize: 20, textAlign: "left", color: "#ffffff" },
       zIndex: 11,
@@ -364,8 +364,8 @@ export const TALK_KITES: KiteDef[] = [
     blocks: [
     {
       type: "h2",
-      content: "What Actually Stayed Constant",
-      position: { x: 3.8667583367686564, y: 5, width: 90, height: 14 },
+      content: "What Actually Stays Constant",
+      position: { x: 3.8667583367686564, y: 5, width: 90, height: 7.772893772893773 },
       style: { fontSize: 48, fontWeight: "bold", textAlign: "left" },
       zIndex: 10,
     },
@@ -758,7 +758,7 @@ export const TALK_KITES: KiteDef[] = [
     blocks: [
     {
       type: "h2",
-      content: "Lossy Meta-Programming",
+      content: `("Lossy") Meta-Programming`,
       position: { x: 5, y: 15, width: 90, height: 22 },
       style: { fontSize: 48, fontWeight: "bold", textAlign: "center" },
       zIndex: 10,
@@ -1053,7 +1053,7 @@ export const TALK_KITES: KiteDef[] = [
     },
     {
       type: "text",
-      content: `You can't control whether AI changes everything.<br><br>You <i>can</i> control whether you're the kind of person who adapts.`,
+      content: `I repeat: You can't control whether AI changes everything.<br><br>You <i>can</i> control whether you're the kind of person who adapts.`,
       position: { x: 5, y: 22, width: 88, height: 45 },
       style: { fontSize: 28, textAlign: "left" },
       zIndex: 10,
@@ -1092,6 +1092,24 @@ export const TALK_KITES: KiteDef[] = [
       content: "Everything will be alright.",
       position: { x: 5, y: 25, width: 90, height: 40 },
       style: { fontSize: 60, fontWeight: "bold", textAlign: "center" },
+      zIndex: 10,
+    },
+  ],
+  },
+  {
+    blocks: [
+    {
+      type: "h1",
+      content: "Live coding",
+      position: { x: 5, y: 20, width: 90, height: 25 },
+      style: { fontSize: 64, fontWeight: "bold", textAlign: "center" },
+      zIndex: 10,
+    },
+    {
+      type: "h3",
+      content: "Let us run a very simple experiment...",
+      position: { x: 10, y: 50, width: 80, height: 12 },
+      style: { fontSize: 36, fontWeight: "semibold", textAlign: "center" },
       zIndex: 10,
     },
   ],
